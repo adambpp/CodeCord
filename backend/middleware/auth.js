@@ -1,0 +1,3 @@
+/* This file will handle the validation of users
+    when they log in to the website.
+*/
