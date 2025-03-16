@@ -1,4 +1,4 @@
-import express from "express";
+const express = require("express");
 const channelsRoutes = require("./routes/channels");
 
 const app = express();

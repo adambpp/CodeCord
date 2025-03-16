@@ -6,6 +6,7 @@ frontend/.next/
 
 # Backend
 backend/node_modules
+backend/testing.py
 
 # dependencies
 /node_modules

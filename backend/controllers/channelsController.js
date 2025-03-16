@@ -1,7 +1,7 @@
-import db from "../db/mysql.js";
+const db = require("../db/mysql.js");
 
 // Function that will get used in a GET request to retrive all channels
-export async function getAllChannels(req, res) {
+async function getAllChannels(req, res) {
   try {
     // Query the channels table
     const [rows] = await db.query(
@@ -15,7 +15,7 @@ export async function getAllChannels(req, res) {
 }
 
 // Function that will get used in a POST request to create/add a new channel
-export async function createChannel(req, res) {
+async function createChannel(req, res) {
   try {
     const { topic, description } = req.body;
 
@@ -41,3 +41,5 @@ export async function createChannel(req, res) {
     return res.status(500).json({ error: "Internal Server Error" });
   }
 }
+
+module.exports = { getAllChannels, createChannel };

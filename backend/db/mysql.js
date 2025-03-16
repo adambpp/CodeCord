@@ -1,4 +1,4 @@
-import mysql from "mysql2";
+const mysql = require("mysql2/promise");
 const dotenv = require("dotenv");
 
 // This is so I can load environment variables from my .env file
@@ -15,9 +15,6 @@ const pool = mysql.createPool({
   queueLimit: 0,
 });
 
-// Turn the pool into a promise for async/await usage
-const db = pool.promise();
-
 // Function that is used in initDatabase()
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -32,7 +29,7 @@ async function initDatabase() {
       const connection = await pool.getConnection();
 
       try {
-        await db.query(`
+        await pool.query(`
             CREATE TABLE IF NOT EXISTS channels (
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 topic VARCHAR(2048) NOT NULL,
@@ -68,4 +65,4 @@ async function initDatabase() {
 initDatabase();
 
 // Export the promised pool so other files can easily use it
-export default db;
+module.exports = pool;
