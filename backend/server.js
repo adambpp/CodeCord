@@ -6,7 +6,7 @@ const app = express();
 // Parse JSON bodies
 app.use(express.json());
 
-// Mount route
+// All endpoints in channelsRoutes get prefixed with /api/channels
 app.use("/api/channels", channelsRoutes);
 
 // Start server
