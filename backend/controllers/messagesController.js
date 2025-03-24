@@ -80,3 +80,5 @@ async function getAllMessagesAndReplies() {
     res.status(500).json({ success: false, error: "Failed to fetch data" });
   }
 }
+
+module.exports = { postMessage, postReply, getAllMessagesAndReplies };
