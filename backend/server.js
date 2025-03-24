@@ -1,5 +1,6 @@
 const express = require("express");
 const channelsRoutes = require("./routes/channels");
+const messageAndReplyRoutes = require("./routes/messages");
 
 const app = express();
 
@@ -8,6 +9,9 @@ app.use(express.json());
 
 // All endpoints in channelsRoutes get prefixed with /api/channels
 app.use("/api/channels", channelsRoutes);
+
+// All endpoints in messageAndReplyRoutes get prefixed with /api/posts
+app.use("/api/posts", messageAndReplyRoutes);
 
 // Start server
 const PORT = 3001;

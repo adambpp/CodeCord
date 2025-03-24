@@ -17,6 +17,12 @@ async function postMessage(req, res, channelId) {
       .json({ success: false, error: "Missing topic or data " });
   }
 
+  if (!channelId) {
+    return res
+      .status(400)
+      .json({ success: false, error: "Channel ID is required" });
+  }
+
   try {
     const newMessage = {
       type: "message",
