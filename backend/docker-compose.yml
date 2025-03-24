@@ -1,0 +1,64 @@
+services:
+  mysql:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD:
+      MYSQL_DATABASE: web_project
+    volumes:
+      - mysql_data:/var/lib/mysql
+    ports:
+      - "3307:3306"
+    restart: unless-stopped
+
+  adminer:
+    image: adminer
+    container_name: adminer_container
+    restart: always
+    ports:
+      - "8080:8080"
+
+  couchdb:
+    image: couchdb:3.3
+    container_name: couchdb_container
+    restart: always
+    environment:
+      COUCHDB_USER:
+      COUCHDB_PASSWORD:
+      COUCHDB_SECRET:
+    ports:
+      - "5984:5984"
+    volumes:
+      - couchdb_data:/opt/couchdb/data
+
+  db-init:
+    image: curlimages/curl:8.2.1
+    command: >
+      sh -c "
+        echo 'Waiting for CouchDB to start...' &&
+        sleep 10 &&
+        echo 'Creating system databases...' &&
+        curl -X PUT http://admin:password@couchdb:5984/_users &&
+        echo 'Creating application database...' &&
+        curl -X PUT http://admin:password@couchdb:5984/messages_and_replies &&
+        echo 'All databases created successfully!'
+      "
+    depends_on:
+      - couchdb
+  app:
+    build: .
+    ports:
+      - "3001:3001"
+    environment:
+      - COUCHDB_URL=http://admin:password@couchdb:5984
+      - DB_HOST=
+      - DB_USER=
+      - DB_PASSWORD=
+      - DB_NAME=
+    depends_on:
+      - mysql
+      - couchdb
+      - db-init
+
+volumes:
+  mysql_data:
+  couchdb_data:
