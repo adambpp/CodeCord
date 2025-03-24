@@ -2,7 +2,7 @@ services:
   mysql:
     image: mysql:8.0
     environment:
-      MYSQL_ROOT_PASSWORD:
+      MYSQL_ROOT_PASSWORD: password
       MYSQL_DATABASE: web_project
     volumes:
       - mysql_data:/var/lib/mysql
@@ -22,9 +22,9 @@ services:
     container_name: couchdb_container
     restart: always
     environment:
-      COUCHDB_USER:
-      COUCHDB_PASSWORD:
-      COUCHDB_SECRET:
+      COUCHDB_USER: admin
+      COUCHDB_PASSWORD: password
+      COUCHDB_SECRET: mysecretkey
     ports:
       - "5984:5984"
     volumes:
@@ -50,10 +50,10 @@ services:
       - "3001:3001"
     environment:
       - COUCHDB_URL=http://admin:password@couchdb:5984
-      - DB_HOST=
-      - DB_USER=
-      - DB_PASSWORD=
-      - DB_NAME=
+      - DB_HOST=mysql
+      - DB_USER=root
+      - DB_PASSWORD=password
+      - DB_NAME=web_project
     depends_on:
       - mysql
       - couchdb

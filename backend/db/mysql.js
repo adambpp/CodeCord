@@ -6,10 +6,10 @@ dotenv.config();
 
 // Store mySQL connection information
 const pool = mysql.createPool({
-  host: process.env.DB_HOST,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
+  host: process.env.DB_HOST || "mysql",
+  user: process.env.DB_USER || "root",
+  password: process.env.DB_PASSWORD || "password",
+  database: process.env.DB_NAME || "web_project",
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,

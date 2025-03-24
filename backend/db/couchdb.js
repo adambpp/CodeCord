@@ -32,7 +32,7 @@ module.exports = (async function CouchDBSetup() {
         _id: "_design/app", // CouchDB design documents always start with _design/
         views: {
           // View to retrieve all message documents
-          posts: {
+          messages: {
             map: function (doc) {
               if (doc.type === "messages") {
                 emit(doc._id, doc);
@@ -78,3 +78,7 @@ module.exports = (async function CouchDBSetup() {
     }
   }
 })();
+
+const Cdb = couch.use(dbName);
+
+module.exports = Cdb;
