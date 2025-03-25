@@ -29,6 +29,11 @@ services:
       - "5984:5984"
     volumes:
       - couchdb_data:/opt/couchdb/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5984/_up"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   db-init:
     image: curlimages/curl:8.2.1

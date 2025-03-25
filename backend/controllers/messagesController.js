@@ -4,12 +4,18 @@ const dotenv = require("dotenv");
 
 dotenv.config();
 
-const db = CouchDBSetup.Cdb;
+// Use the getDb promise to ensure database is ready
+let db;
+CouchDBSetup.getDb
+  .then((database) => {
+    db = database;
+  })
+  .catch((error) => {
+    console.error("Failed to set up database:", error);
+  });
 
-// Pass in channel Id to this function so I can associate it with its
-// respective channel without having to query from mySQL here
-async function postMessage(req, res, channelId) {
-  const { topic, data } = req.body;
+async function postMessage(req, res) {
+  const { topic, data, channelId } = req.body;
 
   if (!topic || !data) {
     return res
@@ -36,7 +42,7 @@ async function postMessage(req, res, channelId) {
     res.json({ success: true, id: response.id });
   } catch (error) {
     console.error("Error creating post: ", error);
-    res.status(500).json({ sucess: false, error: "Failed to create message" });
+    res.status(500).json({ success: false, error: "Failed to create message" });
   }
 }
 
@@ -72,9 +78,11 @@ async function postReply(req, res) {
   }
 }
 
-async function getAllMessagesAndReplies() {
+// Might be better to filter messages by channel here instead of doing it in the
+// frontend later
+async function getAllMessagesAndReplies(req, res) {
   try {
-    const messagesResult = await db.view("app", "messages");
+    const messagesResult = await db.view("app", "message");
     const messages = messagesResult.rows.map((row) => row.value);
 
     const repliesResult = await db.view("app", "reply_by_message");
@@ -82,8 +90,17 @@ async function getAllMessagesAndReplies() {
 
     res.json({ messages, replies });
   } catch (error) {
-    console.error("Error fetching data: ", error);
-    res.status(500).json({ success: false, error: "Failed to fetch data" });
+    console.error("Detailed Error Fetching Data: ", {
+      message: error.message,
+      stack: error.stack,
+      code: error.code,
+      statusCode: error.statusCode,
+    });
+    res.status(500).json({
+      success: false,
+      error: "Failed to fetch data",
+      details: error.message,
+    });
   }
 }
 

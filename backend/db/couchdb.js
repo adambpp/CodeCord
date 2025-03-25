@@ -1,15 +1,15 @@
 const nano = require("nano");
 const dotenv = require("dotenv");
 
-// This is so I can load environment variables from my .env file
 dotenv.config();
 
 const couchUrl =
   process.env.COUCHDB_URL || "http://admin:password@localhost:5984";
 const couch = nano(couchUrl);
-const dbName = process.env.COUCHDB_DB_NAME || "post_and_messages";
+const dbName = process.env.COUCHDB_DB_NAME || "messages_and_replies";
 
-module.exports = (async function CouchDBSetup() {
+// Separate the setup function from the export
+async function setupDatabase() {
   const maxRetries = 10;
   const retryDelay = 5000; // 5 seconds
 
@@ -32,9 +32,9 @@ module.exports = (async function CouchDBSetup() {
         _id: "_design/app", // CouchDB design documents always start with _design/
         views: {
           // View to retrieve all message documents
-          messages: {
+          message: {
             map: function (doc) {
-              if (doc.type === "messages") {
+              if (doc.type === "message") {
                 emit(doc._id, doc);
               }
             }.toString(),
@@ -42,7 +42,7 @@ module.exports = (async function CouchDBSetup() {
           // View to retrieve all replies (including nested ones) organized by messageId
           reply_by_message: {
             map: function (doc) {
-              if (doc.type === "replies") {
+              if (doc.type === "reply") {
                 emit(doc.messageId, doc);
               }
             }.toString(),
@@ -66,7 +66,7 @@ module.exports = (async function CouchDBSetup() {
       }
 
       console.log("CouchDB setup completed successfully!");
-      return; // Exit the retry loop on success
+      return db; // Return the database connection
     } catch (err) {
       console.error(`Attempt ${attempt} failed:`, err.message);
       if (attempt === maxRetries) {
@@ -77,8 +77,10 @@ module.exports = (async function CouchDBSetup() {
       await new Promise((resolve) => setTimeout(resolve, retryDelay));
     }
   }
-})();
+}
 
-const Cdb = couch.use(dbName);
-
-module.exports = Cdb;
+// Export an object with the setup function and a promise for the db connection
+module.exports = {
+  setupDatabase,
+  getDb: setupDatabase(), // This creates a promise that resolves to the db connection
+};
