@@ -1,12 +1,18 @@
-// Make sure to test if this is actually updating the page (without a refresh) for users when new channels appear
-
 "use client";
 import useSWR from "swr";
 import Link from "next/link";
+import { useState } from "react";
+import { Modal, Button, Form } from "react-bootstrap";
+import "bootstrap/dist/css/bootstrap.min.css";
 
 const fetcher = (...args) => fetch(...args).then((res) => res.json());
 
 export default function ChannelsPage() {
+  // Modal state stuff
+  const [show, setShow] = useState(false);
+  const handleClose = () => setShow(false);
+  const handleShow = () => setShow(true);
+
   // const { data: channels, error } = useSWR(
   //   "http://localhost:3001/api/channels",
   //   fetcher,
@@ -84,8 +90,30 @@ export default function ChannelsPage() {
   ];
 
   return (
-    <div className="flex flex-col justify-center items-center gap-3">
+    <div className="bg-black text-white flex flex-col justify-center items-center gap-3">
       <h1 className="font-bold text-4xl m-5">Channels</h1>
+      <Button
+        variant="primary"
+        onClick={handleShow}
+        className="bg-white font-medium text-black p-2 rounded-md border-white"
+      >
+        Create New Channel
+      </Button>
+
+      <Modal show={show} variant="primary" onClick={handleClose}>
+        <Modal.Header closeButton>
+          <Modal.Title>Create New Channel</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>Put a form here</Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={handleClose}>
+            Close
+          </Button>
+          <Button variant="primary" onClick={handleClose}>
+            Create
+          </Button>
+        </Modal.Footer>
+      </Modal>
       {channels.map((channel) => (
         <ChannelBox
           key={channel.id}
@@ -103,7 +131,7 @@ export function ChannelBox({ id, topic, description, time }) {
   return (
     <Link
       href="/channels" // change this later obv
-      className="flex flex-col gap-3 min-w-2xl border-2 rounded-2xl p-2 transition-all duration-300 hover:scale-105 hover:shadow-lg transform-gpu"
+      className="flex flex-col gap-3 min-w-2xl border-2 border-white text-white rounded-2xl p-2 transition-all duration-300 hover:scale-105 hover:shadow-lg transform-gpu"
     >
       <h3 className="text-2xl font-bold">{topic}</h3>
       <p className="flex justify-center">{description}</p>
