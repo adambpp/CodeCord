@@ -23,14 +23,19 @@ export default function ChannelsPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ topic: channelTitle, description: channelDesc }),
     })
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.success) {
-          setChannelTitle("");
-          setChannelDesc("");
-          handleClose();
-          //loadPosts();
+      .then((res) => {
+        // Check if the status is 201 (Created)
+        if (res.status === 201) {
+          return res.json();
         }
+        // If not 201, throw an error
+        throw new Error("Channel creation failed");
+      })
+      .then((data) => {
+        setChannelTitle("");
+        setChannelDesc("");
+        handleClose();
+        //loadPosts();
       })
       .catch((error) => console.error("Error creating channel:", error));
   };
