@@ -10,7 +10,7 @@ export default function Home() {
       </p>
       <Link
         href="/channels"
-        className="bg-white font-medium text-black p-2 rounded-md hover:bg-gray-400 duration-300 ease-in-out"
+        className="bg-black font-medium text-white p-2 rounded-md hover:bg-gray-600 duration-300 ease-in-out"
       >
         View Channels
       </Link>

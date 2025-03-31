@@ -119,12 +119,12 @@ export default function ChannelsPage() {
   ];
 
   return (
-    <div className="bg-black text-white flex flex-col justify-center items-center gap-3">
+    <div className="text-black flex flex-col justify-center items-center gap-3">
       <h1 className="font-bold text-4xl m-5">Channels</h1>
       <Button
         variant="primary"
         onClick={handleShow}
-        className="bg-white font-medium text-black p-2 rounded-md border-white"
+        className="bg-black font-medium text-white p-2 rounded-md border-white"
       >
         Create New Channel
       </Button>
@@ -181,10 +181,13 @@ export default function ChannelsPage() {
 export function ChannelBox({ id, topic, description, time }) {
   return (
     <Link
-      href={`/channels/${encodeURIComponent(topic)}?channelId=${id}`} //             boostrap util vv
-      className="flex flex-col gap-3 min-w-2xl border-2 border-white text-white text-decoration-none rounded-2xl p-2 transition-all duration-300 hover:scale-105 hover:shadow-lg transform-gpu"
+      href={`/channels/${encodeURIComponent(topic)}?channelId=${id}`}
+      className="flex flex-col gap-3 min-w-2xl border-gray-500 border-[0.5px] bg-gray-100 text-black shadow-[0_2px_8px_rgba(0,0,0,0.1)] text-decoration-none p-2 transition-all duration-150 hover:border-3 transform-gpu"
     >
-      <h3 className="text-2xl font-bold">{topic}</h3>
+      <div>
+        <h3 className="text-3xl font-extrabold">{topic}</h3>
+        <div className="bg-gray-300 p-[0.3px]"></div>
+      </div>
       <p className="flex justify-center">{description}</p>
       <small className="flex justify-end">Created: {time}</small>
     </Link>

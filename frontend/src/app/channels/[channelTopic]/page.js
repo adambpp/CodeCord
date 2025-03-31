@@ -91,12 +91,12 @@ export default function ChannelTopicPage({ params }) {
   ];
 
   return (
-    <div className="bg-black text-white flex flex-col justify-center items-center gap-3">
+    <div className="text-black flex flex-col justify-center items-center gap-3">
       <h1 className="text-4xl font-bold">Channel: {channelTopic}</h1>
       <Button
         variant="primary"
         onClick={handleShow}
-        className="bg-white font-medium text-black p-2 rounded-md border-white"
+        className="bg-black font-medium text-white p-2 rounded-md border-white"
       >
         Create New Message
       </Button>
@@ -154,9 +154,13 @@ export default function ChannelTopicPage({ params }) {
 
 export function MessageBox({ id, topic, data, timestamp, channelTopic }) {
   return (
-    <div className="flex flex-col gap-3 border-2 border-white text-white text-decoration-none rounded-[4px] p-2">
-      <h3 className="font-bold text-center">{topic}</h3>
-      <p className="p-1.5">{data}</p>
+    <div className="flex flex-col gap-3 min-w-2xl border-gray-500 border-[0.5px] bg-gray-100 text-black shadow-[0_2px_8px_rgba(0,0,0,0.1)] text-decoration-none p-2">
+      <div>
+        <h3 className="font-bold">{topic}</h3>
+        <div className="bg-gray-300 p-[0.3px]"></div>
+      </div>
+      <p className="p-1.5 m-0">{data}</p>
+      <div className="bg-gray-300 p-[0.3px]"></div>
       <div className="flex justify-between">
         <Link
           href={`/channels/${encodeURIComponent(
@@ -167,7 +171,7 @@ export function MessageBox({ id, topic, data, timestamp, channelTopic }) {
           <FontAwesomeIcon icon={faComment} />
           <p className="m-0">View Replies</p>
         </Link>
-        <small>{timestamp}</small>
+        <small className="flex items-center">{timestamp}</small>
       </div>
     </div>
   );
