@@ -5,6 +5,7 @@ import { use } from "react";
 import { useState } from "react";
 import { Modal, Button, Form } from "react-bootstrap";
 import useSWR from "swr";
+import Link from "next/link";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faComment } from "@fortawesome/free-solid-svg-icons";
 import { useSearchParams } from "next/navigation";
@@ -51,43 +52,43 @@ export default function ChannelTopicPage({ params }) {
       .catch((error) => console.error("Error creating post:", error));
   };
 
-  const { data, error } = useSWR("http://localhost:3001/api/posts", fetcher, {
-    refreshInterval: 3000, // Refresh every 3 seconds
-    revalidateOnFocus: true, // Optional: Refresh when window regains focus
-  });
+  // const { data, error } = useSWR("http://localhost:3001/api/posts", fetcher, {
+  //   refreshInterval: 3000, // Refresh every 3 seconds
+  //   revalidateOnFocus: true, // Optional: Refresh when window regains focus
+  // });
 
-  if (error) return <div>Failed to load</div>;
-  if (!data) return <div>Loading...</div>;
+  // if (error) return <div>Failed to load</div>;
+  // if (!data) return <div>Loading...</div>;
 
-  // Only get the messages that have the matching channelId
-  const channelMessages = data.messages.filter(
-    (message) => message.channelId === channelId
-  );
+  // // Only get the messages that have the matching channelId
+  // const channelMessages = data.messages.filter(
+  //   (message) => message.channelId === channelId
+  // );
 
-  // Group replies by messageId
-  const messageReplies = data.replies.reduce((acc, reply) => {
-    if (!acc[reply.messageId]) {
-      acc[reply.messageId] = [];
-    }
-    acc[reply.messageId].push(reply);
-    return acc;
-  }, {});
+  // Group replies by messageId (Don't think I need this here, will put in another script)
+  // const messageReplies = data.replies.reduce((acc, reply) => {
+  //   if (!acc[reply.messageId]) {
+  //     acc[reply.messageId] = [];
+  //   }
+  //   acc[reply.messageId].push(reply);
+  //   return acc;
+  // }, {});
 
-  // const messages = [
-  //   {
-  //     id: "mock-id-1",
-  //     topic: "How to center a div?",
-  //     data: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
-  //     timestamp: "2025-03-27 09:00 AM",
-  //   },
+  const channelMessages = [
+    {
+      _id: "mock-id-1",
+      topic: "How to center a div?",
+      data: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
+      timestamp: "2025-03-27 09:00 AM",
+    },
 
-  //   {
-  //     id: "mock-id-2",
-  //     topic: "How to return multiple values in C",
-  //     data: "How do I do this? I feel like you can use pointers to achieve this, but I am not 100% sure.",
-  //     timestamp: "2025-03-27 09:00 AM",
-  //   },
-  // ];
+    {
+      _id: "mock-id-2",
+      topic: "How to return multiple values in C",
+      data: "How do I do this? I feel like you can use pointers to achieve this, but I am not 100% sure.",
+      timestamp: "2025-03-27 09:00 AM",
+    },
+  ];
 
   return (
     <div className="bg-black text-white flex flex-col justify-center items-center gap-3">
@@ -97,7 +98,7 @@ export default function ChannelTopicPage({ params }) {
         onClick={handleShow}
         className="bg-white font-medium text-black p-2 rounded-md border-white"
       >
-        Create New Channel
+        Create New Message
       </Button>
 
       <Modal show={show} variant="primary">
@@ -107,7 +108,7 @@ export default function ChannelTopicPage({ params }) {
         <Modal.Body>
           <Form>
             <Form.Group className="mb-3">
-              <Form.Label>Channel Topic</Form.Label>
+              <Form.Label>Message Topic</Form.Label>
               <Form.Control
                 type="text"
                 value={messageTitle}
@@ -116,7 +117,7 @@ export default function ChannelTopicPage({ params }) {
               />
             </Form.Group>
             <Form.Group className="mb-3">
-              <Form.Label>Channel Description</Form.Label>
+              <Form.Label>Message Contents</Form.Label>
               <Form.Control
                 as="textarea"
                 rows={3}
@@ -139,25 +140,33 @@ export default function ChannelTopicPage({ params }) {
       {channelMessages.map((message) => (
         <MessageBox
           key={message._id}
+          id={message._id}
           topic={message.topic}
           data={message.data}
           timestamp={message.timestamp}
+          channelTopic={channelTopic}
+          channelId={channelId}
         />
       ))}
     </div>
   );
 }
 
-export function MessageBox({ topic, data, timestamp }) {
+export function MessageBox({ id, topic, data, timestamp, channelTopic }) {
   return (
     <div className="flex flex-col gap-3 border-2 border-white text-white text-decoration-none rounded-[4px] p-2">
       <h3 className="font-bold text-center">{topic}</h3>
       <p className="p-1.5">{data}</p>
       <div className="flex justify-between">
-        <div className="flex justify-center items-center gap-1">
+        <Link
+          href={`/channels/${encodeURIComponent(
+            channelTopic
+          )}/message/${encodeURIComponent(id)}`}
+          className="flex justify-center items-center gap-1.5 p-1.5 rounded-[5px] bg-white text-black text-decoration-none transition-all duration-300 hover:scale-105 transform-gpu"
+        >
           <FontAwesomeIcon icon={faComment} />
-          <p className="m-0">63</p>
-        </div>
+          <p className="m-0">View Replies</p>
+        </Link>
         <small>{timestamp}</small>
       </div>
     </div>

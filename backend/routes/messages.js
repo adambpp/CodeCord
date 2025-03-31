@@ -5,6 +5,9 @@ const router = express.Router();
 // Get route for retrieving all messages and replies
 router.get("/", messagesController.getAllMessagesAndReplies);
 
+// Get route for retrieving a single message and its replies
+router.get("/:messageId", messagesController.getSingleMessageAndReplies);
+
 // Post route for making a new message in a channel
 router.post("/newMessage", messagesController.postMessage);
 

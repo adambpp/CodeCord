@@ -104,4 +104,60 @@ async function getAllMessagesAndReplies(req, res) {
   }
 }
 
-module.exports = { postMessage, postReply, getAllMessagesAndReplies };
+async function getSingleMessageAndReplies(req, res) {
+  const messageId = req.params.messageId;
+
+  if (!messageId) {
+    return res
+      .status(400)
+      .json({ success: false, error: "Message ID is required" });
+  }
+
+  try {
+    // Get the message document
+    let message;
+    try {
+      message = await db.get(messageId);
+
+      // Verify that this is a message document
+      if (message.type !== "message") {
+        return res.status(404).json({
+          success: false,
+          error: "Document is not a message",
+        });
+      }
+    } catch (error) {
+      return res.status(404).json({
+        success: false,
+        error: "Message not found",
+      });
+    }
+
+    // Get all replies for this message using the view
+    const repliesResult = await db.view("app", "reply_by_message", {
+      key: messageId,
+    });
+
+    const replies = repliesResult.rows.map((row) => row.value);
+
+    res.json({
+      success: true,
+      message,
+      replies,
+    });
+  } catch (error) {
+    console.error("Error fetching message and replies: ", error);
+    res.status(500).json({
+      success: false,
+      error: "Failed to fetch message and replies",
+      details: error.message,
+    });
+  }
+}
+
+module.exports = {
+  postMessage,
+  postReply,
+  getAllMessagesAndReplies,
+  getSingleMessageAndReplies,
+};
