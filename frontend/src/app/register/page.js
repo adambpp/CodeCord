@@ -5,39 +5,36 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import "bootstrap/dist/css/bootstrap.min.css";
 
-export default function LoginPage() {
+export default function RegisterPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [name, setName] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  const handleLogin = async (e) => {
+  const handleRegister = async (e) => {
     e.preventDefault();
     setError("");
     setLoading(true);
 
     try {
-      const response = await fetch("http://localhost:3001/api/users/login", {
+      const response = await fetch("http://localhost:3001/api/users/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify({ username, password, name }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "Login Failed");
+        throw new Error(data.error || "Registration failed");
       }
 
-      // Save token and user info in localStorage
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("user", JSON.stringify(data.user));
-
-      // Redirect to channels page
-      router.push("/channels");
-    } catch (error) {
-      setError(error.message);
+      // Redirect to login page
+      router.push("/login?registered=true");
+    } catch (err) {
+      setError(err.message);
     } finally {
       setLoading(false);
     }
@@ -47,19 +44,30 @@ export default function LoginPage() {
     <div className="flex flex-col items-center justify-center min-h-screen p-4">
       <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
         <h1 className="text-3xl font-bold mb-6 text-center">
-          Login to CodeCord
+          Create an Account
         </h1>
 
         {error && <Alert variant="danger">{error}</Alert>}
 
-        <Form onSubmit={handleLogin}>
+        <Form onSubmit={handleRegister}>
+          <Form.Group className="mb-4">
+            <Form.Label>Name</Form.Label>
+            <Form.Control
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Enter your display name"
+              required
+            />
+          </Form.Group>
+
           <Form.Group className="mb-4">
             <Form.Label>Username</Form.Label>
             <Form.Control
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              placeholder="Enter your username"
+              placeholder="Choose a username"
               required
             />
           </Form.Group>
@@ -70,7 +78,7 @@ export default function LoginPage() {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter your password"
+              placeholder="Create a password"
               required
             />
           </Form.Group>
@@ -81,15 +89,15 @@ export default function LoginPage() {
             disabled={loading}
             className="w-full bg-black text-white p-2 rounded-md hover:bg-gray-800"
           >
-            {loading ? "Logging in..." : "Login"}
+            {loading ? "Creating account..." : "Register"}
           </Button>
         </Form>
 
         <div className="mt-4 text-center">
           <p>
-            Don't have an account?{" "}
-            <Link href="/register" className="text-blue-600 hover:underline">
-              Register
+            Already have an account?{" "}
+            <Link href="/login" className="text-blue-600 hover:underline">
+              Login
             </Link>
           </p>
         </div>
