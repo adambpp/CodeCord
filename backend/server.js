@@ -2,6 +2,8 @@ const express = require("express");
 const cors = require("cors");
 const channelsRoutes = require("./routes/channels");
 const messageAndReplyRoutes = require("./routes/messages");
+const usersRoutes = require("./routes/users");
+const { authenticateUser } = require("./middleware/auth");
 
 const app = express();
 
@@ -21,10 +23,11 @@ app.use(
 // Parse JSON bodies
 app.use(express.json());
 
-// All endpoints in channelsRoutes get prefixed with /api/channels
-app.use("/api/channels", channelsRoutes);
+// User routes (unprotected)
+app.use("/api/users", usersRoutes);
 
-// All endpoints in messageAndReplyRoutes get prefixed with /api/posts
+// Protected routes - these routes require a user to be signed in to access
+app.use("/api/channels", channelsRoutes);
 app.use("/api/posts", messageAndReplyRoutes);
 
 // Start server
