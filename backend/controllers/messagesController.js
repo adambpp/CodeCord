@@ -240,4 +240,6 @@ module.exports = {
   postReply,
   getAllMessagesAndReplies,
   getSingleMessageAndReplies,
+  deleteMessage,
+  deleteReply,
 };
