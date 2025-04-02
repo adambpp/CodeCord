@@ -15,7 +15,7 @@ CouchDBSetup.getDb
   });
 
 async function postMessage(req, res) {
-  const { topic, data, channelId } = req.body;
+  const { topic, data, imageUrl, channelId } = req.body;
 
   if (!topic || !data) {
     return res
@@ -35,6 +35,7 @@ async function postMessage(req, res) {
       channelId: channelId,
       topic,
       data,
+      ...(imageUrl && { imageUrl: imageUrl }),
       timestamp: new Date().toLocaleString("sv-SE"),
     };
 

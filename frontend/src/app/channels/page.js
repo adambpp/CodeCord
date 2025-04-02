@@ -42,81 +42,81 @@ export default function ChannelsPage() {
       .catch((error) => console.error("Error creating channel:", error));
   };
 
-  // const { data: channels, error } = useSWR(
-  //   "http://localhost:3001/api/channels",
-  //   fetcher,
-  //   {
-  //     refreshInterval: 3000, // Refresh every 3 seconds
-  //     revalidateOnFocus: true, // Optional: Refresh when window regains focus
-  //   }
-  // );
+  const { data: channels, error } = useSWR(
+    "http://localhost:3001/api/channels",
+    fetcher,
+    {
+      refreshInterval: 3000, // Refresh every 3 seconds
+      revalidateOnFocus: true, // Optional: Refresh when window regains focus
+    }
+  );
 
-  // if (error) return <div>Failed to load</div>;
-  // if (!channels) return <div>Loading...</div>;
+  if (error) return <div>Failed to load</div>;
+  if (!channels) return <div>Loading...</div>;
 
   // Hard coded channels for testing
-  const channels = [
-    {
-      id: 1,
-      topic: "General",
-      description: "General discussions",
-      timestamp: "2025-03-27 09:00 AM",
-    },
-    {
-      id: 2,
-      topic: "Random",
-      description: "Off-topic conversations",
-      timestamp: "2025-03-27 09:15 AM",
-    },
-    {
-      id: 3,
-      topic: "Help",
-      description: "Get support here",
-      timestamp: "2025-03-27 10:00 AM",
-    },
-    {
-      id: 4,
-      topic: "Announcements",
-      description: "Important updates",
-      timestamp: "2025-03-27 10:30 AM",
-    },
-    {
-      id: 5,
-      topic: "Feedback",
-      description: "Share your thoughts",
-      timestamp: "2025-03-27 11:00 AM",
-    },
-    {
-      id: 6,
-      topic: "Development",
-      description: "Code and tech talk",
-      timestamp: "2025-03-27 11:45 AM",
-    },
-    {
-      id: 7,
-      topic: "Design",
-      description: "UI/UX discussions",
-      timestamp: "2025-03-27 12:30 PM",
-    },
-    {
-      id: 8,
-      topic: "Marketing",
-      description: "Promotion strategies",
-      timestamp: "2025-03-27 01:00 PM",
-    },
-    {
-      id: 9,
-      topic: "Jobs",
-      description: "Career opportunities",
-      timestamp: "2025-03-27 02:00 PM",
-    },
-    {
-      id: 10,
-      topic: "Fun",
-      description: "Memes and games",
-      timestamp: "2025-03-27 03:00 PM",
-    },
-  ];
+  // const channels = [
+  //   {
+  //     id: 1,
+  //     topic: "General",
+  //     description: "General discussions",
+  //     timestamp: "2025-03-27 09:00 AM",
+  //   },
+  //   {
+  //     id: 2,
+  //     topic: "Random",
+  //     description: "Off-topic conversations",
+  //     timestamp: "2025-03-27 09:15 AM",
+  //   },
+  //   {
+  //     id: 3,
+  //     topic: "Help",
+  //     description: "Get support here",
+  //     timestamp: "2025-03-27 10:00 AM",
+  //   },
+  //   {
+  //     id: 4,
+  //     topic: "Announcements",
+  //     description: "Important updates",
+  //     timestamp: "2025-03-27 10:30 AM",
+  //   },
+  //   {
+  //     id: 5,
+  //     topic: "Feedback",
+  //     description: "Share your thoughts",
+  //     timestamp: "2025-03-27 11:00 AM",
+  //   },
+  //   {
+  //     id: 6,
+  //     topic: "Development",
+  //     description: "Code and tech talk",
+  //     timestamp: "2025-03-27 11:45 AM",
+  //   },
+  //   {
+  //     id: 7,
+  //     topic: "Design",
+  //     description: "UI/UX discussions",
+  //     timestamp: "2025-03-27 12:30 PM",
+  //   },
+  //   {
+  //     id: 8,
+  //     topic: "Marketing",
+  //     description: "Promotion strategies",
+  //     timestamp: "2025-03-27 01:00 PM",
+  //   },
+  //   {
+  //     id: 9,
+  //     topic: "Jobs",
+  //     description: "Career opportunities",
+  //     timestamp: "2025-03-27 02:00 PM",
+  //   },
+  //   {
+  //     id: 10,
+  //     topic: "Fun",
+  //     description: "Memes and games",
+  //     timestamp: "2025-03-27 03:00 PM",
+  //   },
+  // ];
 
   return (
     <div className="text-black flex flex-col justify-center items-center gap-3">

@@ -28,6 +28,7 @@ export default function ChannelTopicPage({ params }) {
   const handleShow = () => setShow(true);
   const [messageTitle, setMessageTitle] = useState("");
   const [messageContents, setMessageContents] = useState("");
+  const [imageUrl, setImageUrl] = useState("");
 
   const createMessage = () => {
     if (!messageTitle || !messageContents) return;
@@ -38,6 +39,7 @@ export default function ChannelTopicPage({ params }) {
       body: JSON.stringify({
         topic: messageTitle,
         data: messageContents,
+        imageUrl: imageUrl,
         channelId: channelId,
       }),
     })
@@ -46,24 +48,25 @@ export default function ChannelTopicPage({ params }) {
         if (data.success) {
           setMessageTitle("");
           setMessageContents("");
+          setImageUrl("");
           handleClose();
         }
       })
       .catch((error) => console.error("Error creating post:", error));
   };
 
-  // const { data, error } = useSWR("http://localhost:3001/api/posts", fetcher, {
-  //   refreshInterval: 3000, // Refresh every 3 seconds
-  //   revalidateOnFocus: true, // Optional: Refresh when window regains focus
-  // });
+  const { data, error } = useSWR("http://localhost:3001/api/posts", fetcher, {
+    refreshInterval: 3000, // Refresh every 3 seconds
+    revalidateOnFocus: true, // Optional: Refresh when window regains focus
+  });
 
-  // if (error) return <div>Failed to load</div>;
-  // if (!data) return <div>Loading...</div>;
+  if (error) return <div>Failed to load</div>;
+  if (!data) return <div>Loading...</div>;
 
-  // // Only get the messages that have the matching channelId
-  // const channelMessages = data.messages.filter(
-  //   (message) => message.channelId === channelId
-  // );
+  // Only get the messages that have the matching channelId
+  const channelMessages = data.messages.filter(
+    (message) => message.channelId === channelId
+  );
 
   // Group replies by messageId (Don't think I need this here, will put in another script)
   // const messageReplies = data.replies.reduce((acc, reply) => {
@@ -74,21 +77,22 @@ export default function ChannelTopicPage({ params }) {
   //   return acc;
   // }, {});
 
-  const channelMessages = [
-    {
-      _id: "mock-id-1",
-      topic: "How to center a div?",
-      data: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
-      timestamp: "2025-03-27 09:00 AM",
-    },
+  // const channelMessages = [
+  //   {
+  //     _id: "mock-id-1",
+  //     topic: "How to center a div?",
+  //     data: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
+  //     imageUrl: "https://i.ytimg.com/vi/NhHb9usKy6Q/maxresdefault.jpg",
+  //     timestamp: "2025-03-27 09:00 AM",
+  //   },
 
-    {
-      _id: "mock-id-2",
-      topic: "How to return multiple values in C",
-      data: "How do I do this? I feel like you can use pointers to achieve this, but I am not 100% sure.",
-      timestamp: "2025-03-27 09:00 AM",
-    },
-  ];
+  //   {
+  //     _id: "mock-id-2",
+  //     topic: "How to return multiple values in C",
+  //     data: "How do I do this? I feel like you can use pointers to achieve this, but I am not 100% sure.",
+  //     timestamp: "2025-03-27 09:00 AM",
+  //   },
+  // ];
 
   return (
     <div className="text-black flex flex-col justify-center items-center gap-3">
@@ -126,6 +130,15 @@ export default function ChannelTopicPage({ params }) {
                 placeholder="Enter message content"
               />
             </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label>Add Image to Message (optional)</Form.Label>
+              <Form.Control
+                type="text"
+                value={imageUrl}
+                onChange={(e) => setImageUrl(e.target.value)}
+                placeholder="Enter image URL"
+              />
+            </Form.Group>
           </Form>
         </Modal.Body>
         <Modal.Footer>
@@ -145,21 +158,36 @@ export default function ChannelTopicPage({ params }) {
           data={message.data}
           timestamp={message.timestamp}
           channelTopic={channelTopic}
-          channelId={channelId}
+          imageUrl={message.imageUrl}
+          // channelId={channelId}
         />
       ))}
     </div>
   );
 }
 
-export function MessageBox({ id, topic, data, timestamp, channelTopic }) {
+export function MessageBox({
+  id,
+  topic,
+  data,
+  timestamp,
+  channelTopic,
+  imageUrl,
+}) {
   return (
     <div className="flex flex-col gap-3 min-w-2xl border-gray-500 border-[0.5px] bg-gray-100 text-black shadow-[0_2px_8px_rgba(0,0,0,0.1)] text-decoration-none p-2">
       <div>
         <h3 className="font-bold">{topic}</h3>
-        <div className="bg-gray-300 p-[0.3px]"></div>
+        <div className="bg-gray-300 p-[0.4px]"></div>
       </div>
       <p className="p-1.5 m-0">{data}</p>
+      {imageUrl && (
+        <img
+          src={imageUrl}
+          alt="Message related"
+          className="max-w-full h-auto my-2"
+        />
+      )}
       <div className="bg-gray-300 p-[0.3px]"></div>
       <div className="flex justify-between">
         <Link

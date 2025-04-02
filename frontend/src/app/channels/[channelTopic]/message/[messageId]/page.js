@@ -23,38 +23,65 @@ export default function SingleMessageViewPage({ params }) {
   const handleShow = () => setShow(true);
   const [replyContents, setReplyContents] = useState("");
 
-  // const { data, error } = useSWR(
-  //   `http://localhost:3001/api/posts/${messageId}`,
-  //   fetcher,
-  //   {
-  //     refreshInterval: 3000, // Refresh every 3 seconds
-  //     revalidateOnFocus: true, // Optional: Refresh when window regains focus
-  //   }
-  // );
+  const createReply = () => {
+    if (!replyContents) return;
 
-  const message = {
-    _id: "mock-id-1",
-    topic: "How to center a div?",
-    data: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
-    timestamp: "2025-03-27 09:00 AM",
+    fetch("http://localhost:3001/api/posts/newReply", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        messageId: messageId,
+        data: replyContents,
+      }),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) {
+          setReplyContents("");
+          handleClose();
+        }
+      })
+      .catch((error) => console.error("Error creating reply:", error));
   };
 
-  const replies = [
+  const { data, error } = useSWR(
+    `http://localhost:3001/api/posts/${messageId}`,
+    fetcher,
     {
-      _id: "1",
-      type: "reply",
-      messageId: "mock-id-1",
-      data: "This is a reply",
-      timestamp: new Date().toLocaleString("sv-SE"),
-    },
-    {
-      _id: "2",
-      type: "reply",
-      messageId: "mock-id-1",
-      data: "This is also a reply",
-      timestamp: new Date().toLocaleString("sv-SE"),
-    },
-  ];
+      refreshInterval: 3000, // Refresh every 3 seconds
+      revalidateOnFocus: true, // Optional: Refresh when window regains focus
+    }
+  );
+
+  if (error) return <div>Failed to load</div>;
+  if (!data) return <div>Loading...</div>;
+
+  const message = data.message;
+  const replies = data.replies;
+
+  // const message = {
+  //   _id: "mock-id-1",
+  //   topic: "How to center a div?",
+  //   data: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
+  //   timestamp: "2025-03-27 09:00 AM",
+  // };
+
+  // const replies = [
+  //   {
+  //     _id: "1",
+  //     type: "reply",
+  //     messageId: "mock-id-1",
+  //     data: "This is a reply",
+  //     timestamp: new Date().toLocaleString("sv-SE"),
+  //   },
+  //   {
+  //     _id: "2",
+  //     type: "reply",
+  //     messageId: "mock-id-1",
+  //     data: "This is also a reply",
+  //     timestamp: new Date().toLocaleString("sv-SE"),
+  //   },
+  // ];
 
   return (
     <div className="flex flex-col gap-3 min-w-2xl border-gray-500 border-[0.5px] bg-gray-100 text-black shadow-[0_2px_8px_rgba(0,0,0,0.1)] text-decoration-none p-2">
@@ -95,7 +122,7 @@ export default function SingleMessageViewPage({ params }) {
           <Button variant="secondary" onClick={handleClose}>
             Close
           </Button>
-          <Button variant="primary" onClick={console.log("e")}>
+          <Button variant="primary" onClick={createReply}>
             Post
           </Button>
         </Modal.Footer>
