@@ -42,4 +42,30 @@ async function createChannel(req, res) {
   }
 }
 
-module.exports = { getAllChannels, createChannel };
+// ADMIN function to delete a channel
+async function deleteChannel(req, res) {
+  try {
+    const { channelId } = req.params;
+
+    // Check if channel exists
+    const [channels] = await db.query("SELECT * FROM channels WHERE id = ?", [
+      channelId,
+    ]);
+
+    if (channels.length === 0) {
+      return res.status(404).json({ error: "Channel not found" });
+    }
+
+    // Delete the channel
+    await db.query("DELETE FROM channels WHERE id = ?", [channelId]);
+
+    return res
+      .status(200)
+      .json({ success: true, message: "Channel deleted successfully " });
+  } catch (error) {
+    console.error("Error deleting channel: ", error);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+}
+
+module.exports = { getAllChannels, createChannel, deleteChannel };
