@@ -22,6 +22,7 @@ export default function SingleMessageViewPage({ params }) {
   const handleClose = () => setShow(false);
   const handleShow = () => setShow(true);
   const [replyContents, setReplyContents] = useState("");
+  const [imageUrl, setImageUrl] = useState("");
 
   const createReply = () => {
     if (!replyContents) return;
@@ -32,12 +33,14 @@ export default function SingleMessageViewPage({ params }) {
       body: JSON.stringify({
         messageId: messageId,
         data: replyContents,
+        imageUrl: imageUrl,
       }),
     })
       .then((res) => res.json())
       .then((data) => {
         if (data.success) {
           setReplyContents("");
+          setImageUrl("");
           handleClose();
         }
       })
@@ -90,6 +93,13 @@ export default function SingleMessageViewPage({ params }) {
         <div className="bg-gray-300 p-[0.3px]"></div>
       </div>
       <p className="p-1.5 m-0">{message.data}</p>
+      {message.imageUrl && (
+        <img
+          src={message.imageUrl}
+          alt="Message related"
+          className="max-w-full h-auto my-2"
+        />
+      )}
       <small className="flex justify-end">Created: {message.timestamp}</small>
       <div className="bg-gray-300 p-[0.3px]"></div>
       <Button
@@ -116,6 +126,15 @@ export default function SingleMessageViewPage({ params }) {
                 placeholder="What would you like to say?"
               />
             </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label>Add Image to Reply (optional)</Form.Label>
+              <Form.Control
+                type="text"
+                value={imageUrl}
+                onChange={(e) => setImageUrl(e.target.value)}
+                placeholder="Enter image URL"
+              />
+            </Form.Group>
           </Form>
         </Modal.Body>
         <Modal.Footer>
@@ -132,17 +151,25 @@ export default function SingleMessageViewPage({ params }) {
           key={reply._id}
           data={reply.data}
           timestamp={reply.timestamp}
+          imageUrl={reply.imageUrl}
         />
       ))}
     </div>
   );
 }
 
-export function ReplyBox({ data, timestamp }) {
+export function ReplyBox({ data, timestamp, imageUrl }) {
   return (
     <div className="flex flex-col">
       <p className="m-0">User</p>
       <p className="m-0 pl-1">{data}</p>
+      {imageUrl && (
+        <img
+          src={imageUrl}
+          alt="Unsupported image URL"
+          className="max-w-md h-auto my-2"
+        />
+      )}
     </div>
   );
 }

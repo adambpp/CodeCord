@@ -48,7 +48,7 @@ async function postMessage(req, res) {
 }
 
 async function postReply(req, res) {
-  const { messageId, data, parentId } = req.body;
+  const { messageId, data, imageUrl, parentId } = req.body;
 
   if (!messageId || !data) {
     return res
@@ -66,6 +66,7 @@ async function postReply(req, res) {
       type: "reply",
       messageId,
       data,
+      ...(imageUrl && { imageUrl: imageUrl }),
       timestamp: new Date().toLocaleString("sv-SE"),
       // Optional: parentId to indicate a nested reply
       ...(parentId && { parentId }),

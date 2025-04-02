@@ -29,6 +29,7 @@ async function initDatabase() {
       const connection = await pool.getConnection();
 
       try {
+        // Create channels table
         await pool.query(`
             CREATE TABLE IF NOT EXISTS channels (
                 id INT AUTO_INCREMENT PRIMARY KEY,
@@ -38,6 +39,23 @@ async function initDatabase() {
             )
         `);
 
+        // Create users table
+        await pool.query(`
+          CREATE TABLE IF NOT EXISTS users (
+              id INT AUTO_INCREMENT PRIMARY KEY,
+              username VARCHAR(50) UNIQUE NOT NULL,
+              password VARCHAR(255) NOT NULL,
+              name VARCHAR(100) NOT NULL,
+              isAdmin BOOLEAN DEFAULT false,
+              created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+          )
+        `);
+
+        // Create admin user if not exists
+        await pool.query(`
+            INSERT IGNORE INTO users (username, password, name, isAdmin) 
+            VALUES ('admin', '$2b$10$mR8hMxUiCztVJIXzrKHSUOAbmcrudH/cUeOEIO9V9Uln62Ieyj.5m', 'System Administrator', true)
+        `);
         console.log("Database initialized");
         return;
       } finally {
