@@ -80,6 +80,84 @@ async function postReply(req, res) {
   }
 }
 
+// ADMIN function for deleting a message
+async function deleteMessage(req, res) {
+  const { messageId } = req.params;
+
+  try {
+    try {
+      await db.get(messageId);
+    } catch (error) {
+      return res
+        .status(404)
+        .json({ success: false, error: "Message not found" });
+    }
+
+    // Delete the message
+    await db.destroy(messageId, (await db.get(messageId))._rev);
+
+    // Find and delete all replies to this message
+    const repliesResult = await db.view("app", "reply_by_message", {
+      key: messageId,
+    });
+
+    // Delete each reply
+    for (const row of repliesResult.rows) {
+      const reply = row.value;
+      await db.destroy(reply._id, reply._rev);
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Message and all replies deleted successfully",
+    });
+  } catch (error) {
+    console.error("Error deleting message:", error);
+    return res
+      .status(500)
+      .json({ success: false, error: "Failed to delete message" });
+  }
+}
+
+// ADMIN function for deleting a reply
+async function deleteReply(req, res) {
+  const { replyId } = req.params;
+
+  try {
+    // Check if reply exists and is actually a reply
+    let reply;
+    try {
+      reply = await db.get(replyId);
+
+      if (reply.type !== "reply") {
+        return res.status(400).json({
+          success: false,
+          error: "Document is not a reply",
+        });
+      }
+    } catch (error) {
+      return res.status(404).json({
+        success: false,
+        error: "Reply not found",
+      });
+    }
+
+    // Delete the reply
+    await db.destroy(replyId, reply._rev);
+
+    return res.status(200).json({
+      success: true,
+      message: "Reply deleted successfully",
+    });
+  } catch (error) {
+    console.error("Error deleting reply: ", error);
+    return res.status(500).json({
+      success: false,
+      error: "Failed to delete reply",
+    });
+  }
+}
+
 // Might be better to filter messages by channel here instead of doing it in the
 // frontend later
 async function getAllMessagesAndReplies(req, res) {
