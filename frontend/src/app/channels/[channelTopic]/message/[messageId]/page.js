@@ -6,7 +6,7 @@ import { useState } from "react";
 import { Modal, Button, Form } from "react-bootstrap";
 import useSWR from "swr";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faComment } from "@fortawesome/free-solid-svg-icons";
+import { faComment, faReply } from "@fortawesome/free-solid-svg-icons";
 import { useSearchParams } from "next/navigation";
 import ProtectedRoute from "../../../../components/ProtectedRoute";
 import { useAuth } from "../../../../context/AuthContext";
@@ -33,28 +33,45 @@ export default function SingleMessageViewPage({ params }) {
   const [replyContents, setReplyContents] = useState("");
   const [imageUrl, setImageUrl] = useState("");
 
+  // New state for parent reply
+  const [replyingTo, setReplyingTo] = useState(null);
+
   const createReply = () => {
     if (!replyContents) return;
+
+    const replyData = {
+      messageId: messageId,
+      data: replyContents,
+      user: user.username,
+      imageUrl: imageUrl,
+    };
+
+    // Add parentId if replying to another reply
+    if (replyingTo) {
+      replyData.parentId = replyingTo.id;
+    }
 
     authFetch("http://localhost:3001/api/posts/newReply", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        messageId: messageId,
-        data: replyContents,
-        user: user.username,
-        imageUrl: imageUrl,
-      }),
+      body: JSON.stringify(replyData),
     })
       .then((res) => res.json())
       .then((data) => {
         if (data.success) {
           setReplyContents("");
           setImageUrl("");
+          setReplyingTo(null);
           handleClose();
         }
       })
       .catch((error) => console.error("Error creating reply:", error));
+  };
+
+  // Function to start replying to a specific reply
+  const handleReplyToReply = (reply) => {
+    setReplyingTo(reply);
+    handleShow();
   };
 
   const { data, error } = useSWR(
@@ -72,29 +89,37 @@ export default function SingleMessageViewPage({ params }) {
   const message = data.message;
   const replies = data.replies;
 
-  // const message = {
-  //   _id: "mock-id-1",
-  //   topic: "How to center a div?",
-  //   data: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
-  //   timestamp: "2025-03-27 09:00 AM",
-  // };
+  // Organize replies into a nested structure
+  const organizeReplies = (replies) => {
+    // Map to store replies by their ID for quick lookups
+    const replyMap = {};
 
-  // const replies = [
-  //   {
-  //     _id: "1",
-  //     type: "reply",
-  //     messageId: "mock-id-1",
-  //     data: "This is a reply",
-  //     timestamp: new Date().toLocaleString("sv-SE"),
-  //   },
-  //   {
-  //     _id: "2",
-  //     type: "reply",
-  //     messageId: "mock-id-1",
-  //     data: "This is also a reply",
-  //     timestamp: new Date().toLocaleString("sv-SE"),
-  //   },
-  // ];
+    // First, add all replies to the map
+    replies.forEach((reply) => {
+      // Clone reply and add children array
+      replyMap[reply._id] = { ...reply, children: [] };
+    });
+
+    // Root-level replies (direct replies to the message)
+    const rootReplies = [];
+
+    // Build the reply tree
+    replies.forEach((reply) => {
+      const replyWithChildren = replyMap[reply._id];
+
+      if (reply.parentId && replyMap[reply.parentId]) {
+        // This is a nested reply, add it to its parent's children
+        replyMap[reply.parentId].children.push(replyWithChildren);
+      } else {
+        // This is a root reply (direct reply to the message)
+        rootReplies.push(replyWithChildren);
+      }
+    });
+
+    return rootReplies;
+  };
+
+  const nestedReplies = organizeReplies(replies);
 
   return (
     <ProtectedRoute>
@@ -118,7 +143,10 @@ export default function SingleMessageViewPage({ params }) {
         <div className="bg-gray-300 p-[0.3px]"></div>
         <Button
           variant="primary"
-          onClick={handleShow}
+          onClick={() => {
+            setReplyingTo(null);
+            handleShow();
+          }}
           className="bg-black font-medium max-w-[100px] text-white p-2 rounded-md border-white"
         >
           Reply
@@ -126,9 +154,21 @@ export default function SingleMessageViewPage({ params }) {
 
         <Modal show={show} variant="primary">
           <Modal.Header closeButton onClick={handleClose}>
-            <Modal.Title>Create New Reply</Modal.Title>
+            <Modal.Title>
+              {replyingTo
+                ? `Reply to ${replyingTo.user}'s comment`
+                : "Create New Reply"}
+            </Modal.Title>
           </Modal.Header>
           <Modal.Body>
+            {replyingTo && (
+              <div className="mb-3 p-2 bg-gray-100 border-l-4 border-gray-400">
+                <p className="text-sm text-gray-600">
+                  <strong>{replyingTo.user}</strong> wrote:
+                </p>
+                <p className="text-sm">{replyingTo.data}</p>
+              </div>
+            )}
             <Form>
               <Form.Group className="mb-3">
                 <Form.Label>Content</Form.Label>
@@ -160,13 +200,14 @@ export default function SingleMessageViewPage({ params }) {
             </Button>
           </Modal.Footer>
         </Modal>
-        {replies.map((reply) => (
+
+        {/* Render the nested replies */}
+        {nestedReplies.map((reply) => (
           <ReplyBox
             key={reply._id}
-            data={reply.data}
-            timestamp={reply.timestamp}
-            imageUrl={reply.imageUrl}
-            user={reply.user}
+            reply={reply}
+            onReplyClick={handleReplyToReply}
+            level={0}
           />
         ))}
       </div>
@@ -174,23 +215,57 @@ export default function SingleMessageViewPage({ params }) {
   );
 }
 
-export function ReplyBox({ data, timestamp, imageUrl, user }) {
+// Updated ReplyBox component to handle nested replies
+export function ReplyBox({ reply, onReplyClick, level = 0 }) {
+  const { _id, data, timestamp, imageUrl, user, children } = reply;
+  const maxNestingLevel = 5; // Prevent excessive nesting
+
   return (
-    <div className="flex gap-2 mb-2">
-      <div className="p-0.5 bg-black"></div>
-      <div className="flex flex-col">
-        <p className="m-0">
-          <strong>{user}</strong> replied:
-        </p>
-        <p className="m-0 pl-1 pt-1">{data}</p>
-        {imageUrl && (
-          <img
-            src={imageUrl}
-            alt="Unsupported image URL"
-            className="max-w-md h-auto my-2 border-gray-500 border-1 rounded-[6px]"
-          />
-        )}
+    <div className="mb-2">
+      <div className="flex gap-2" style={{ marginLeft: `${level * 20}px` }}>
+        <div className="p-0.5 bg-black"></div>
+        <div className="flex flex-col flex-grow">
+          <div className="flex justify-between items-center">
+            <p className="m-0">
+              <strong>{user}</strong> replied:
+            </p>
+            <small className="text-gray-500">{timestamp}</small>
+          </div>
+          <p className="m-0 pl-1 pt-1">{data}</p>
+          {imageUrl && (
+            <img
+              src={imageUrl}
+              alt="Unsupported image URL"
+              className="max-w-md h-auto my-2 border-gray-500 border-1 rounded-[6px]"
+            />
+          )}
+
+          {/* Reply button */}
+          <div className="mt-2">
+            <button
+              onClick={() => onReplyClick({ id: _id, data, user })}
+              className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1"
+            >
+              <FontAwesomeIcon icon={faReply} size="sm" />
+              Reply
+            </button>
+          </div>
+        </div>
       </div>
+
+      {/* Render children replies */}
+      {children && children.length > 0 && level < maxNestingLevel && (
+        <div className="mt-2">
+          {children.map((childReply) => (
+            <ReplyBox
+              key={childReply._id}
+              reply={childReply}
+              onReplyClick={onReplyClick}
+              level={level + 1}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
