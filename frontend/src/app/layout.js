@@ -26,7 +26,7 @@ export default function RootLayout({ children }) {
       >
         <AuthProvider>
           <Header />
-          <main>{children}</main>
+          <main className="container mx-auto p-4">{children}</main>
         </AuthProvider>
       </body>
     </html>
