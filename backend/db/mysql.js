@@ -36,6 +36,7 @@ async function initDatabase() {
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 topic VARCHAR(2048) NOT NULL,
                 description TEXT NOT NULL,
+                created_by VARCHAR(50) UNIQUE NOT NULL,
                 timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
             )
         `);

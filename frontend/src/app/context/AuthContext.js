@@ -67,7 +67,7 @@ export function AuthProvider({ children }) {
         login,
         logout,
         authFetch,
-        isAdmin: user?.isAdmin,
+        isAdmin: Boolean(user?.isAdmin), // Convert to boolean cause backend has it as 0 or 1
       }}
     >
       {children}

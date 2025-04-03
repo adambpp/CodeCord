@@ -1,14 +1,15 @@
 // /src/app/profile/page.js
 "use client";
 import { useState, useEffect } from "react";
-import { Card } from "react-bootstrap";
+import { Form, Button, Alert, Card } from "react-bootstrap";
 import ProtectedRoute from "../components/ProtectedRoute";
 import { useAuth } from "../context/AuthContext";
+import Header from "../components/header";
 import "bootstrap/dist/css/bootstrap.min.css";
 
 export default function ProfilePage() {
   const { user, authFetch } = useAuth();
-
+  const [name, setName] = useState("");
   useEffect(() => {
     if (user) {
       setName(user.name || "");

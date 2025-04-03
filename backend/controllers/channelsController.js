@@ -17,7 +17,7 @@ async function getAllChannels(req, res) {
 // Function that will get used in a POST request to create/add a new channel
 async function createChannel(req, res) {
   try {
-    const { topic, description } = req.body;
+    const { topic, description, created_by } = req.body;
 
     if (!topic || !description) {
       return res
@@ -26,8 +26,8 @@ async function createChannel(req, res) {
     }
 
     const [result] = await db.query(
-      "INSERT INTO channels (topic, description) VALUES (?, ?)",
-      [topic, description]
+      "INSERT INTO channels (topic, description, created_by) VALUES (?, ?, ?)",
+      [topic, description, created_by]
     );
 
     const [rows] = await db.query("SELECT * FROM channels WHERE id = ?", [

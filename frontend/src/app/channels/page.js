@@ -10,7 +10,7 @@ import { useAuth } from "../context/AuthContext";
 import "bootstrap/dist/css/bootstrap.min.css";
 
 export default function ChannelsPage() {
-  const { authFetch } = useAuth(); // Get authFetch correctly from context
+  const { authFetch, user } = useAuth(); // Get authFetch correctly from context
 
   // Use authFetch inside a custom fetcher function for SWR
   const fetcher = (url) => authFetch(url).then((res) => res.json());
@@ -28,7 +28,11 @@ export default function ChannelsPage() {
     authFetch("http://localhost:3001/api/channels/newChannel", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ topic: channelTitle, description: channelDesc }),
+      body: JSON.stringify({
+        topic: channelTitle,
+        description: channelDesc,
+        created_by: user.username,
+      }),
     })
       .then((res) => {
         // Check if the status is 201 (Created)
@@ -177,25 +181,33 @@ export default function ChannelsPage() {
           topic={channel.topic}
           description={channel.description}
           time={channel.timestamp}
+          user={channel.created_by}
         />
       ))}
     </div>
   );
 }
 
-export function ChannelBox({ id, topic, description, time }) {
+export function ChannelBox({ id, topic, description, time, user }) {
   return (
     <ProtectedRoute>
       <Link
         href={`/channels/${encodeURIComponent(topic)}?channelId=${id}`}
-        className="flex flex-col gap-3 min-w-2xl border-gray-500 border-[0.5px] bg-gray-100 text-black shadow-[0_2px_8px_rgba(0,0,0,0.1)] text-decoration-none p-2 transition-all duration-150 hover:border-3 transform-gpu"
+        className="flex flex-col gap-3 min-w-2xl border-gray-500 border-[0.5px] bg-gray-100 text-black shadow-[0_2px_8px_rgba(0,0,0,0.1)] text-decoration-none p-2 transition-all duration-150 hover:bg-gray-200 transform-gpu"
       >
         <div>
-          <h3 className="text-3xl font-extrabold">{topic}</h3>
-          <div className="bg-gray-300 p-[0.3px]"></div>
+          <div className="flex justify-between items-center">
+            <h3 className="text-3xl font-extrabold m-0">{topic}</h3>
+            <small className="m-0">
+              Initial creator: <strong>{user}</strong>
+            </small>
+          </div>
+          <div className="bg-gray-300 p-[0.3px] mt-1"></div>
         </div>
         <p className="flex justify-center">{description}</p>
-        <small className="flex justify-end">Created: {time}</small>
+        <small className="flex justify-end">
+          Created: {new Date(time).toLocaleString()}
+        </small>
       </Link>
     </ProtectedRoute>
   );
