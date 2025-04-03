@@ -1,4 +1,4 @@
-// Create a file at /src/app/profile/page.js
+// /src/app/profile/page.js
 "use client";
 import { useState, useEffect } from "react";
 import { Form, Button, Alert, Card } from "react-bootstrap";
