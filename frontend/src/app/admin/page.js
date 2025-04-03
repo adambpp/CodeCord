@@ -33,11 +33,13 @@ export default function AdminDashboard() {
     error: usersError,
     mutate: mutateUsers,
   } = useFetch("http://localhost:3001/api/users/all");
+
   const {
     data: channelsData,
     error: channelsError,
     mutate: mutateChannels,
   } = useFetch("http://localhost:3001/api/channels");
+
   const {
     data: messagesData,
     error: messagesError,
@@ -88,8 +90,8 @@ export default function AdminDashboard() {
       });
 
       if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || "Delete operation failed");
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Delete operation failed");
       }
 
       // Refresh data after successful delete
@@ -102,15 +104,16 @@ export default function AdminDashboard() {
         handleCloseDeleteModal();
       }, 1500);
     } catch (error) {
-      setDeleteError(error.message);
+      console.error("Delete error:", error);
+      setDeleteError(
+        error.message || "An error occurred during delete operation"
+      );
     }
   };
 
   return (
     <AdminRoute>
       <div className="min-h-screen bg-gray-100">
-        <Header />
-
         <div className="container mx-auto py-8 px-4">
           <h1 className="text-3xl font-bold mb-6">Admin Dashboard</h1>
 
@@ -124,6 +127,9 @@ export default function AdminDashboard() {
               </Nav.Item>
               <Nav.Item>
                 <Nav.Link eventKey="messages">Messages</Nav.Link>
+              </Nav.Item>
+              <Nav.Item>
+                <Nav.Link eventKey="replies">Replies</Nav.Link>
               </Nav.Item>
             </Nav>
 
@@ -140,7 +146,11 @@ export default function AdminDashboard() {
                     </Alert>
                   )}
 
-                  {usersData && (
+                  {!usersData && !usersError && (
+                    <Alert variant="info">Loading users...</Alert>
+                  )}
+
+                  {usersData && usersData.users && (
                     <Table striped bordered hover>
                       <thead>
                         <tr>
@@ -152,7 +162,7 @@ export default function AdminDashboard() {
                         </tr>
                       </thead>
                       <tbody>
-                        {usersData.users?.map((user) => (
+                        {usersData.users.map((user) => (
                           <tr key={user.id}>
                             <td>{user.username}</td>
                             <td>{user.name}</td>
@@ -197,6 +207,10 @@ export default function AdminDashboard() {
                     </Alert>
                   )}
 
+                  {!channelsData && !channelsError && (
+                    <Alert variant="info">Loading channels...</Alert>
+                  )}
+
                   {channelsData && (
                     <Table striped bordered hover>
                       <thead>
@@ -208,37 +222,39 @@ export default function AdminDashboard() {
                         </tr>
                       </thead>
                       <tbody>
-                        {channelsData.channels?.map((channel) => (
-                          <tr key={channel.id}>
-                            <td>{channel.topic}</td>
-                            <td>{channel.description}</td>
-                            <td>
-                              {new Date(
-                                channel.created_at
-                              ).toLocaleDateString()}
-                            </td>
-                            <td>
-                              <Button
-                                variant="danger"
-                                size="sm"
-                                onClick={() =>
-                                  handleShowDeleteModal(
-                                    channel.id,
-                                    "channel",
-                                    channel.topic
-                                  )
-                                }
-                              >
-                                Delete
-                              </Button>
-                            </td>
-                          </tr>
-                        ))}
+                        {Array.isArray(channelsData) &&
+                          channelsData.map((channel) => (
+                            <tr key={channel.id}>
+                              <td>{channel.topic}</td>
+                              <td>{channel.description}</td>
+                              <td>
+                                {new Date(
+                                  channel.timestamp
+                                ).toLocaleDateString()}
+                              </td>
+                              <td>
+                                <Button
+                                  variant="danger"
+                                  size="sm"
+                                  onClick={() =>
+                                    handleShowDeleteModal(
+                                      channel.id,
+                                      "channel",
+                                      channel.topic
+                                    )
+                                  }
+                                >
+                                  Delete
+                                </Button>
+                              </td>
+                            </tr>
+                          ))}
                       </tbody>
                     </Table>
                   )}
                 </div>
               </Tab.Pane>
+
               <Tab.Pane eventKey="messages">
                 <div className="bg-white p-4 rounded shadow">
                   <h2 className="text-xl font-semibold mb-4">
@@ -251,7 +267,11 @@ export default function AdminDashboard() {
                     </Alert>
                   )}
 
-                  {messagesData && (
+                  {!messagesData && !messagesError && (
+                    <Alert variant="info">Loading messages...</Alert>
+                  )}
+
+                  {messagesData && messagesData.messages && (
                     <Table striped bordered hover>
                       <thead>
                         <tr>
@@ -263,7 +283,7 @@ export default function AdminDashboard() {
                         </tr>
                       </thead>
                       <tbody>
-                        {messagesData.messages?.map((message) => (
+                        {messagesData.messages.map((message) => (
                           <tr key={message._id}>
                             <td>{message.topic}</td>
                             <td>{message.data.substring(0, 50)}...</td>
@@ -278,6 +298,65 @@ export default function AdminDashboard() {
                                     message._id,
                                     "message",
                                     message.topic
+                                  )
+                                }
+                              >
+                                Delete
+                              </Button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </Table>
+                  )}
+                </div>
+              </Tab.Pane>
+
+              <Tab.Pane eventKey="replies">
+                <div className="bg-white p-4 rounded shadow">
+                  <h2 className="text-xl font-semibold mb-4">
+                    Reply Management
+                  </h2>
+
+                  {messagesError && (
+                    <Alert variant="danger">
+                      Failed to load replies: {messagesError.message}
+                    </Alert>
+                  )}
+
+                  {!messagesData && !messagesError && (
+                    <Alert variant="info">Loading replies...</Alert>
+                  )}
+
+                  {messagesData && messagesData.replies && (
+                    <Table striped bordered hover>
+                      <thead>
+                        <tr>
+                          <th>Message ID</th>
+                          <th>Content</th>
+                          <th>Created</th>
+                          <th>Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {messagesData.replies.map((reply) => (
+                          <tr key={reply._id}>
+                            <td>
+                              <span title={reply.messageId}>
+                                {reply.messageId.substring(0, 10)}...
+                              </span>
+                            </td>
+                            <td>{reply.data.substring(0, 50)}...</td>
+                            <td>{reply.timestamp}</td>
+                            <td>
+                              <Button
+                                variant="danger"
+                                size="sm"
+                                onClick={() =>
+                                  handleShowDeleteModal(
+                                    reply._id,
+                                    "reply",
+                                    reply.data.substring(0, 15) + "..."
                                   )
                                 }
                               >

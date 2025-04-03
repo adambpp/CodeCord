@@ -84,8 +84,6 @@ export default function ProfilePage() {
   return (
     <ProtectedRoute>
       <div className="min-h-screen bg-gray-100">
-        <Header />
-
         <div className="container mx-auto py-8 px-4">
           <h1 className="text-3xl font-bold mb-6">Your Profile</h1>
 

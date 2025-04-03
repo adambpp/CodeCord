@@ -39,7 +39,7 @@ const requireAdmin = (req, res, next) => {
   if (!req.user || !req.user.isAdmin) {
     return res.status(403).json({
       success: false,
-      error: "Forbideen - Admin access required",
+      error: "Forbidden - Admin access required",
     });
   }
 

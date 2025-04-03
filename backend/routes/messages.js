@@ -1,6 +1,6 @@
 const express = require("express");
 const messagesController = require("../controllers/messagesController");
-const { RequireAdmin, requireAdmin } = require("../middleware/auth");
+const { authenticateUser, requireAdmin } = require("../middleware/auth");
 const router = express.Router();
 
 // Get route for retrieving all messages and replies
@@ -18,9 +18,15 @@ router.post("/newReply", messagesController.postReply);
 // Admin routes for deletes messages and replies
 router.delete(
   "/message/:messageId",
+  authenticateUser,
   requireAdmin,
   messagesController.deleteMessage
 );
-router.delete("/reply/:replyId", requireAdmin, messagesController.deleteReply);
+router.delete(
+  "/reply/:replyId",
+  authenticateUser,
+  requireAdmin,
+  messagesController.deleteReply
+);
 
 module.exports = router;
