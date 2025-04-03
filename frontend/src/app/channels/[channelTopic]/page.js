@@ -9,14 +9,18 @@ import Link from "next/link";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faComment } from "@fortawesome/free-solid-svg-icons";
 import { useSearchParams } from "next/navigation";
+import ProtectedRoute from "../../components/ProtectedRoute";
+import { useAuth } from "../../context/AuthContext";
 import "bootstrap/dist/css/bootstrap.min.css";
-
-const fetcher = (...args) => fetch(...args).then((res) => res.json());
 
 export default function ChannelTopicPage({ params }) {
   // Getting the channel topic from the dynamic route with React.use() as params
   // is a promise
   const channelTopic = decodeURIComponent(use(params).channelTopic);
+
+  const { authFetch } = useAuth(); // Get authFetch from context
+  // Use authFetch inside a custom fetcher function for SWR
+  const fetcher = (url) => authFetch(url).then((res) => res.json());
 
   // Get the channelId from query parameters
   const searchParams = useSearchParams();
@@ -33,7 +37,7 @@ export default function ChannelTopicPage({ params }) {
   const createMessage = () => {
     if (!messageTitle || !messageContents) return;
 
-    fetch("http://localhost:3001/api/posts/newMessage", {
+    authFetch("http://localhost:3001/api/posts/newMessage", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -95,74 +99,76 @@ export default function ChannelTopicPage({ params }) {
   // ];
 
   return (
-    <div className="text-black flex flex-col justify-center items-center gap-3">
-      <h1 className="text-4xl font-bold">Channel: {channelTopic}</h1>
-      <Button
-        variant="primary"
-        onClick={handleShow}
-        className="bg-black font-medium text-white p-2 rounded-md border-white"
-      >
-        Create New Message
-      </Button>
+    <ProtectedRoute>
+      <div className="text-black flex flex-col justify-center items-center gap-3">
+        <h1 className="text-4xl font-bold">Channel: {channelTopic}</h1>
+        <Button
+          variant="primary"
+          onClick={handleShow}
+          className="bg-black font-medium text-white p-2 rounded-md border-white"
+        >
+          Create New Message
+        </Button>
 
-      <Modal show={show} variant="primary">
-        <Modal.Header closeButton onClick={handleClose}>
-          <Modal.Title>Create New Message</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <Form>
-            <Form.Group className="mb-3">
-              <Form.Label>Message Topic</Form.Label>
-              <Form.Control
-                type="text"
-                value={messageTitle}
-                onChange={(e) => setMessageTitle(e.target.value)}
-                placeholder="Enter topic"
-              />
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Message Contents</Form.Label>
-              <Form.Control
-                as="textarea"
-                rows={3}
-                value={messageContents}
-                onChange={(e) => setMessageContents(e.target.value)}
-                placeholder="Enter message content"
-              />
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Add Image to Message (optional)</Form.Label>
-              <Form.Control
-                type="text"
-                value={imageUrl}
-                onChange={(e) => setImageUrl(e.target.value)}
-                placeholder="Enter image URL"
-              />
-            </Form.Group>
-          </Form>
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={handleClose}>
-            Close
-          </Button>
-          <Button variant="primary" onClick={createMessage}>
-            Create
-          </Button>
-        </Modal.Footer>
-      </Modal>
-      {channelMessages.map((message) => (
-        <MessageBox
-          key={message._id}
-          id={message._id}
-          topic={message.topic}
-          data={message.data}
-          timestamp={message.timestamp}
-          channelTopic={channelTopic}
-          imageUrl={message.imageUrl}
-          // channelId={channelId}
-        />
-      ))}
-    </div>
+        <Modal show={show} variant="primary">
+          <Modal.Header closeButton onClick={handleClose}>
+            <Modal.Title>Create New Message</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            <Form>
+              <Form.Group className="mb-3">
+                <Form.Label>Message Topic</Form.Label>
+                <Form.Control
+                  type="text"
+                  value={messageTitle}
+                  onChange={(e) => setMessageTitle(e.target.value)}
+                  placeholder="Enter topic"
+                />
+              </Form.Group>
+              <Form.Group className="mb-3">
+                <Form.Label>Message Contents</Form.Label>
+                <Form.Control
+                  as="textarea"
+                  rows={3}
+                  value={messageContents}
+                  onChange={(e) => setMessageContents(e.target.value)}
+                  placeholder="Enter message content"
+                />
+              </Form.Group>
+              <Form.Group className="mb-3">
+                <Form.Label>Add Image to Message (optional)</Form.Label>
+                <Form.Control
+                  type="text"
+                  value={imageUrl}
+                  onChange={(e) => setImageUrl(e.target.value)}
+                  placeholder="Enter image URL"
+                />
+              </Form.Group>
+            </Form>
+          </Modal.Body>
+          <Modal.Footer>
+            <Button variant="secondary" onClick={handleClose}>
+              Close
+            </Button>
+            <Button variant="primary" onClick={createMessage}>
+              Create
+            </Button>
+          </Modal.Footer>
+        </Modal>
+        {channelMessages.map((message) => (
+          <MessageBox
+            key={message._id}
+            id={message._id}
+            topic={message.topic}
+            data={message.data}
+            timestamp={message.timestamp}
+            channelTopic={channelTopic}
+            imageUrl={message.imageUrl}
+            // channelId={channelId}
+          />
+        ))}
+      </div>
+    </ProtectedRoute>
   );
 }
 

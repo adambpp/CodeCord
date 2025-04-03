@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { Form, Button, Alert } from "react-bootstrap";
 import { useRouter } from "next/navigation";
+import { useAuth } from "../context/AuthContext"; // Import useAuth
 import Link from "next/link";
 import "bootstrap/dist/css/bootstrap.min.css";
 
@@ -11,6 +12,7 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const { login } = useAuth(); // Get login function from context
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -30,9 +32,8 @@ export default function LoginPage() {
         throw new Error(data.error || "Login Failed");
       }
 
-      // Save token and user info in localStorage
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("user", JSON.stringify(data.user));
+      // Use the login function from context to update app state
+      login(data.user, data.token);
 
       // Redirect to channels page
       router.push("/channels");

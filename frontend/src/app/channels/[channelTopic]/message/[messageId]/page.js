@@ -8,14 +8,23 @@ import useSWR from "swr";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faComment } from "@fortawesome/free-solid-svg-icons";
 import { useSearchParams } from "next/navigation";
+import ProtectedRoute from "../../../../components/ProtectedRoute";
+import { useAuth } from "../../../../context/AuthContext";
 import "bootstrap/dist/css/bootstrap.min.css";
 
-const fetcher = (...args) => fetch(...args).then((res) => res.json());
+const fetcher = (url) => {
+  const { authFetch } = useAuth();
+  return authFetch(url).then((res) => res.json());
+};
 
 export default function SingleMessageViewPage({ params }) {
   // Getting the channel topic from the dynamic route with React.use() as params
   // is a promise
   const messageId = decodeURIComponent(use(params).messageId);
+
+  const { authFetch } = useAuth(); // Get authFetch from context
+  // Use authFetch inside a custom fetcher function for SWR
+  const fetcher = (url) => authFetch(url).then((res) => res.json());
 
   // State variables and handlers
   const [show, setShow] = useState(false);
@@ -27,7 +36,7 @@ export default function SingleMessageViewPage({ params }) {
   const createReply = () => {
     if (!replyContents) return;
 
-    fetch("http://localhost:3001/api/posts/newReply", {
+    authFetch("http://localhost:3001/api/posts/newReply", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -87,74 +96,76 @@ export default function SingleMessageViewPage({ params }) {
   // ];
 
   return (
-    <div className="flex flex-col gap-3 min-w-2xl border-gray-500 border-[0.5px] bg-gray-100 text-black shadow-[0_2px_8px_rgba(0,0,0,0.1)] text-decoration-none p-2">
-      <div>
-        <h3 className="font-bold">{message.topic}</h3>
+    <ProtectedRoute>
+      <div className="flex flex-col gap-3 min-w-2xl border-gray-500 border-[0.5px] bg-gray-100 text-black shadow-[0_2px_8px_rgba(0,0,0,0.1)] text-decoration-none p-2">
+        <div>
+          <h3 className="font-bold">{message.topic}</h3>
+          <div className="bg-gray-300 p-[0.3px]"></div>
+        </div>
+        <p className="p-1.5 m-0">{message.data}</p>
+        {message.imageUrl && (
+          <img
+            src={message.imageUrl}
+            alt="Message related"
+            className="max-w-full h-auto my-2"
+          />
+        )}
+        <small className="flex justify-end">Created: {message.timestamp}</small>
         <div className="bg-gray-300 p-[0.3px]"></div>
-      </div>
-      <p className="p-1.5 m-0">{message.data}</p>
-      {message.imageUrl && (
-        <img
-          src={message.imageUrl}
-          alt="Message related"
-          className="max-w-full h-auto my-2"
-        />
-      )}
-      <small className="flex justify-end">Created: {message.timestamp}</small>
-      <div className="bg-gray-300 p-[0.3px]"></div>
-      <Button
-        variant="primary"
-        onClick={handleShow}
-        className="bg-black font-medium max-w-[100px] text-white p-2 rounded-md border-white"
-      >
-        Reply
-      </Button>
+        <Button
+          variant="primary"
+          onClick={handleShow}
+          className="bg-black font-medium max-w-[100px] text-white p-2 rounded-md border-white"
+        >
+          Reply
+        </Button>
 
-      <Modal show={show} variant="primary">
-        <Modal.Header closeButton onClick={handleClose}>
-          <Modal.Title>Create New Reply</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <Form>
-            <Form.Group className="mb-3">
-              <Form.Label>Content</Form.Label>
-              <Form.Control
-                as="textarea"
-                rows={3}
-                value={replyContents}
-                onChange={(e) => setReplyContents(e.target.value)}
-                placeholder="What would you like to say?"
-              />
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Add Image to Reply (optional)</Form.Label>
-              <Form.Control
-                type="text"
-                value={imageUrl}
-                onChange={(e) => setImageUrl(e.target.value)}
-                placeholder="Enter image URL"
-              />
-            </Form.Group>
-          </Form>
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={handleClose}>
-            Close
-          </Button>
-          <Button variant="primary" onClick={createReply}>
-            Post
-          </Button>
-        </Modal.Footer>
-      </Modal>
-      {replies.map((reply) => (
-        <ReplyBox
-          key={reply._id}
-          data={reply.data}
-          timestamp={reply.timestamp}
-          imageUrl={reply.imageUrl}
-        />
-      ))}
-    </div>
+        <Modal show={show} variant="primary">
+          <Modal.Header closeButton onClick={handleClose}>
+            <Modal.Title>Create New Reply</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            <Form>
+              <Form.Group className="mb-3">
+                <Form.Label>Content</Form.Label>
+                <Form.Control
+                  as="textarea"
+                  rows={3}
+                  value={replyContents}
+                  onChange={(e) => setReplyContents(e.target.value)}
+                  placeholder="What would you like to say?"
+                />
+              </Form.Group>
+              <Form.Group className="mb-3">
+                <Form.Label>Add Image to Reply (optional)</Form.Label>
+                <Form.Control
+                  type="text"
+                  value={imageUrl}
+                  onChange={(e) => setImageUrl(e.target.value)}
+                  placeholder="Enter image URL"
+                />
+              </Form.Group>
+            </Form>
+          </Modal.Body>
+          <Modal.Footer>
+            <Button variant="secondary" onClick={handleClose}>
+              Close
+            </Button>
+            <Button variant="primary" onClick={createReply}>
+              Post
+            </Button>
+          </Modal.Footer>
+        </Modal>
+        {replies.map((reply) => (
+          <ReplyBox
+            key={reply._id}
+            data={reply.data}
+            timestamp={reply.timestamp}
+            imageUrl={reply.imageUrl}
+          />
+        ))}
+      </div>
+    </ProtectedRoute>
   );
 }
 

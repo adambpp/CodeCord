@@ -1,15 +1,20 @@
-// ;channels/page.js
+// channels/page.js
 
 "use client";
 import useSWR from "swr";
 import Link from "next/link";
 import { useState } from "react";
 import { Modal, Button, Form } from "react-bootstrap";
+import ProtectedRoute from "../components/ProtectedRoute";
+import { useAuth } from "../context/AuthContext";
 import "bootstrap/dist/css/bootstrap.min.css";
 
-const fetcher = (...args) => fetch(...args).then((res) => res.json());
-
 export default function ChannelsPage() {
+  const { authFetch } = useAuth(); // Get authFetch correctly from context
+
+  // Use authFetch inside a custom fetcher function for SWR
+  const fetcher = (url) => authFetch(url).then((res) => res.json());
+
   // Modal state stuff
   const [show, setShow] = useState(false);
   const [channelTitle, setChannelTitle] = useState("");
@@ -20,7 +25,7 @@ export default function ChannelsPage() {
   const createChannel = () => {
     if (!channelTitle || !channelDesc) return;
 
-    fetch("http://localhost:3001/api/channels/newChannel", {
+    authFetch("http://localhost:3001/api/channels/newChannel", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ topic: channelTitle, description: channelDesc }),
@@ -180,16 +185,18 @@ export default function ChannelsPage() {
 
 export function ChannelBox({ id, topic, description, time }) {
   return (
-    <Link
-      href={`/channels/${encodeURIComponent(topic)}?channelId=${id}`}
-      className="flex flex-col gap-3 min-w-2xl border-gray-500 border-[0.5px] bg-gray-100 text-black shadow-[0_2px_8px_rgba(0,0,0,0.1)] text-decoration-none p-2 transition-all duration-150 hover:border-3 transform-gpu"
-    >
-      <div>
-        <h3 className="text-3xl font-extrabold">{topic}</h3>
-        <div className="bg-gray-300 p-[0.3px]"></div>
-      </div>
-      <p className="flex justify-center">{description}</p>
-      <small className="flex justify-end">Created: {time}</small>
-    </Link>
+    <ProtectedRoute>
+      <Link
+        href={`/channels/${encodeURIComponent(topic)}?channelId=${id}`}
+        className="flex flex-col gap-3 min-w-2xl border-gray-500 border-[0.5px] bg-gray-100 text-black shadow-[0_2px_8px_rgba(0,0,0,0.1)] text-decoration-none p-2 transition-all duration-150 hover:border-3 transform-gpu"
+      >
+        <div>
+          <h3 className="text-3xl font-extrabold">{topic}</h3>
+          <div className="bg-gray-300 p-[0.3px]"></div>
+        </div>
+        <p className="flex justify-center">{description}</p>
+        <small className="flex justify-end">Created: {time}</small>
+      </Link>
+    </ProtectedRoute>
   );
 }
