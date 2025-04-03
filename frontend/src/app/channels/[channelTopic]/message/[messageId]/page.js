@@ -22,7 +22,7 @@ export default function SingleMessageViewPage({ params }) {
   // is a promise
   const messageId = decodeURIComponent(use(params).messageId);
 
-  const { authFetch } = useAuth(); // Get authFetch from context
+  const { authFetch, user } = useAuth(); // Get authFetch from context
   // Use authFetch inside a custom fetcher function for SWR
   const fetcher = (url) => authFetch(url).then((res) => res.json());
 
@@ -42,6 +42,7 @@ export default function SingleMessageViewPage({ params }) {
       body: JSON.stringify({
         messageId: messageId,
         data: replyContents,
+        user: user.username,
         imageUrl: imageUrl,
       }),
     })
@@ -99,6 +100,9 @@ export default function SingleMessageViewPage({ params }) {
     <ProtectedRoute>
       <div className="flex flex-col gap-3 min-w-2xl border-gray-500 border-[0.5px] bg-gray-100 text-black shadow-[0_2px_8px_rgba(0,0,0,0.1)] text-decoration-none p-2">
         <div>
+          <p>
+            Posted by: <strong>{message.user}</strong>
+          </p>
           <h3 className="font-bold">{message.topic}</h3>
           <div className="bg-gray-300 p-[0.3px]"></div>
         </div>
@@ -162,6 +166,7 @@ export default function SingleMessageViewPage({ params }) {
             data={reply.data}
             timestamp={reply.timestamp}
             imageUrl={reply.imageUrl}
+            user={reply.user}
           />
         ))}
       </div>
@@ -169,18 +174,23 @@ export default function SingleMessageViewPage({ params }) {
   );
 }
 
-export function ReplyBox({ data, timestamp, imageUrl }) {
+export function ReplyBox({ data, timestamp, imageUrl, user }) {
   return (
-    <div className="flex flex-col">
-      <p className="m-0">User</p>
-      <p className="m-0 pl-1">{data}</p>
-      {imageUrl && (
-        <img
-          src={imageUrl}
-          alt="Unsupported image URL"
-          className="max-w-md h-auto my-2"
-        />
-      )}
+    <div className="flex gap-2 mb-2">
+      <div className="p-0.5 bg-black"></div>
+      <div className="flex flex-col">
+        <p className="m-0">
+          <strong>{user}</strong> replied:
+        </p>
+        <p className="m-0 pl-1 pt-1">{data}</p>
+        {imageUrl && (
+          <img
+            src={imageUrl}
+            alt="Unsupported image URL"
+            className="max-w-md h-auto my-2 border-gray-500 border-1 rounded-[6px]"
+          />
+        )}
+      </div>
     </div>
   );
 }

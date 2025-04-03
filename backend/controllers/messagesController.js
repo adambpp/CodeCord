@@ -15,7 +15,7 @@ CouchDBSetup.getDb
   });
 
 async function postMessage(req, res) {
-  const { topic, data, imageUrl, channelId } = req.body;
+  const { topic, data, imageUrl, channelId, user } = req.body;
 
   if (!topic || !data) {
     return res
@@ -35,6 +35,7 @@ async function postMessage(req, res) {
       channelId: channelId,
       topic,
       data,
+      user: user,
       ...(imageUrl && { imageUrl: imageUrl }),
       timestamp: new Date().toLocaleString("sv-SE"),
     };
@@ -48,7 +49,7 @@ async function postMessage(req, res) {
 }
 
 async function postReply(req, res) {
-  const { messageId, data, imageUrl, parentId } = req.body;
+  const { messageId, data, imageUrl, parentId, user } = req.body;
 
   if (!messageId || !data) {
     return res
@@ -66,6 +67,7 @@ async function postReply(req, res) {
       type: "reply",
       messageId,
       data,
+      user,
       ...(imageUrl && { imageUrl: imageUrl }),
       timestamp: new Date().toLocaleString("sv-SE"),
       // Optional: parentId to indicate a nested reply

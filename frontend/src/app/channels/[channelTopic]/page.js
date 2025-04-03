@@ -18,7 +18,7 @@ export default function ChannelTopicPage({ params }) {
   // is a promise
   const channelTopic = decodeURIComponent(use(params).channelTopic);
 
-  const { authFetch } = useAuth(); // Get authFetch from context
+  const { authFetch, user } = useAuth(); // Get authFetch from context
   // Use authFetch inside a custom fetcher function for SWR
   const fetcher = (url) => authFetch(url).then((res) => res.json());
 
@@ -45,6 +45,7 @@ export default function ChannelTopicPage({ params }) {
         data: messageContents,
         imageUrl: imageUrl,
         channelId: channelId,
+        user: user.username,
       }),
     })
       .then((res) => res.json())
@@ -164,6 +165,7 @@ export default function ChannelTopicPage({ params }) {
             timestamp={message.timestamp}
             channelTopic={channelTopic}
             imageUrl={message.imageUrl}
+            user={message.user}
             // channelId={channelId}
           />
         ))}
@@ -179,10 +181,14 @@ export function MessageBox({
   timestamp,
   channelTopic,
   imageUrl,
+  user,
 }) {
   return (
     <div className="flex flex-col gap-3 min-w-2xl border-gray-500 border-[0.5px] bg-gray-100 text-black shadow-[0_2px_8px_rgba(0,0,0,0.1)] text-decoration-none p-2">
       <div>
+        <p>
+          Posted by: <strong>{user}</strong>
+        </p>
         <h3 className="font-bold">{topic}</h3>
         <div className="bg-gray-300 p-[0.4px]"></div>
       </div>
