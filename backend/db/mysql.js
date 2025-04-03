@@ -1,5 +1,6 @@
 const mysql = require("mysql2/promise");
 const dotenv = require("dotenv");
+const bcrypt = require("bcrypt");
 
 // This is so I can load environment variables from my .env file
 dotenv.config();
@@ -52,10 +53,16 @@ async function initDatabase() {
         `);
 
         // Create admin user if not exists
-        await pool.query(`
+        const adminPassword = "admin123"; // Will change this to a safer password and store in .env later
+        const saltRounds = 10;
+        const hashedPassword = await bcrypt.hash(adminPassword, saltRounds);
+        await connection.query(
+          `
             INSERT IGNORE INTO users (username, password, name, isAdmin) 
-            VALUES ('admin', '$2b$10$mR8hMxUiCztVJIXzrKHSUOAbmcrudH/cUeOEIO9V9Uln62Ieyj.5m', 'System Administrator', true)
-        `);
+            VALUES ('admin', ?, 'System Administrator', true)
+          `,
+          [hashedPassword]
+        );
         console.log("Database initialized");
         return;
       } finally {
