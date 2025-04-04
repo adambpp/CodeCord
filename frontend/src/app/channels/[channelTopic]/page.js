@@ -11,11 +11,69 @@ import {
   faComment,
   faArrowUp,
   faArrowDown,
+  faCode,
 } from "@fortawesome/free-solid-svg-icons";
 import { useSearchParams } from "next/navigation";
 import ProtectedRoute from "../../components/ProtectedRoute";
 import { useAuth } from "../../context/AuthContext";
 import "bootstrap/dist/css/bootstrap.min.css";
+
+// Function to handle turning selected text into code format
+function formatAsCode(textareaId, value, setValue) {
+  const textarea = document.getElementById(textareaId);
+  if (!textarea) return;
+
+  const start = textarea.selectionStart;
+  const end = textarea.selectionEnd;
+  const selectedText = value.substring(start, end);
+
+  if (selectedText) {
+    // Format the selected text as code by wrapping in triple backticks
+    const formattedText = `\`\`\`\n${selectedText}\n\`\`\``;
+
+    // Create the new text with formatted code
+    const newText =
+      value.substring(0, start) + formattedText + value.substring(end);
+
+    // Update the React state
+    setValue(newText);
+
+    // Set cursor position after formatting (we'll need to do this in useEffect)
+    setTimeout(() => {
+      textarea.selectionStart = start + formattedText.length;
+      textarea.selectionEnd = start + formattedText.length;
+      textarea.focus();
+    }, 0);
+  } else {
+    // If no text is selected, insert empty code block and place cursor in middle
+    const codeBlock = "```\n\n```";
+    const cursorPosition = start + 4; // Position after opening backticks and newline
+
+    const newText =
+      value.substring(0, start) + codeBlock + value.substring(end);
+
+    // Update the React state
+    setValue(newText);
+
+    // Set cursor position after formatting
+    setTimeout(() => {
+      textarea.selectionStart = cursorPosition;
+      textarea.selectionEnd = cursorPosition;
+      textarea.focus();
+    }, 0);
+  }
+}
+
+// Function to render markdown-style code blocks in content
+function renderCodeBlocks(text) {
+  if (!text) return "";
+
+  // Replace markdown code blocks with HTML
+  return text.replace(/```([\s\S]*?)```/g, (match, code) => {
+    const formattedCode = code.trim();
+    return `<pre class="bg-gray-800 text-white p-3 my-2 rounded overflow-x-auto"><code>${formattedCode}</code></pre>`;
+  });
+}
 
 export default function ChannelTopicPage({ params }) {
   // Getting the channel topic from the dynamic route with React.use() as params
@@ -168,10 +226,30 @@ export default function ChannelTopicPage({ params }) {
                 <Form.Control
                   as="textarea"
                   rows={3}
+                  id="messageContents"
                   value={messageContents}
                   onChange={(e) => setMessageContents(e.target.value)}
                   placeholder="Enter message content"
                 />
+                <div className="mt-2">
+                  <Button
+                    variant="outline-secondary"
+                    size="sm"
+                    onClick={() =>
+                      formatAsCode(
+                        "messageContents",
+                        messageContents,
+                        setMessageContents
+                      )
+                    }
+                  >
+                    <FontAwesomeIcon icon={faCode} className="mr-1" />
+                    Format as Code
+                  </Button>
+                  <small className="text-muted ml-2">
+                    Select text first or insert empty code block
+                  </small>
+                </div>
               </Form.Group>
               <Form.Group className="mb-3">
                 <Form.Label>Add Image to Message (optional)</Form.Label>
@@ -258,6 +336,11 @@ export function MessageBox({
   votes,
   onVote,
 }) {
+  // Use a function to safely render the message content with code blocks
+  const renderContent = (content) => {
+    return { __html: renderCodeBlocks(content) };
+  };
+
   return (
     <div className="flex flex-col gap-3 min-w-2xl border-gray-500 border-[0.5px] bg-gray-100 text-black shadow-[0_2px_8px_rgba(0,0,0,0.1)] text-decoration-none p-2">
       <div>
@@ -272,7 +355,11 @@ export function MessageBox({
         <VoteButtons documentId={id} votes={votes} onVote={onVote} />
 
         <div className="flex-grow">
-          <p className="p-1.5 m-0">{data}</p>
+          {/* Render the content with code blocks support */}
+          <div
+            className="p-1.5 m-0"
+            dangerouslySetInnerHTML={renderContent(data)}
+          />
           {imageUrl && (
             <img
               src={imageUrl}
