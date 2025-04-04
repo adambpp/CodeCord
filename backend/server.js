@@ -3,6 +3,7 @@ const cors = require("cors");
 const channelsRoutes = require("./routes/channels");
 const messageAndReplyRoutes = require("./routes/messages");
 const usersRoutes = require("./routes/users");
+const votingRoutes = require("./routes/votes");
 const { authenticateUser } = require("./middleware/auth");
 
 const app = express();
@@ -29,6 +30,7 @@ app.use("/api/users", usersRoutes);
 // Protected routes - these routes require a user to be signed in to access
 app.use("/api/channels", channelsRoutes);
 app.use("/api/posts", messageAndReplyRoutes);
+app.use("/api/votes", votingRoutes);
 
 // Start server
 const PORT = 3001;

@@ -2,11 +2,16 @@
 
 "use client";
 import { use } from "react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Modal, Button, Form } from "react-bootstrap";
 import useSWR from "swr";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faComment, faReply } from "@fortawesome/free-solid-svg-icons";
+import {
+  faComment,
+  faReply,
+  faArrowUp,
+  faArrowDown,
+} from "@fortawesome/free-solid-svg-icons";
 import { useSearchParams } from "next/navigation";
 import ProtectedRoute from "../../../../components/ProtectedRoute";
 import { useAuth } from "../../../../context/AuthContext";
@@ -32,9 +37,10 @@ export default function SingleMessageViewPage({ params }) {
   const handleShow = () => setShow(true);
   const [replyContents, setReplyContents] = useState("");
   const [imageUrl, setImageUrl] = useState("");
-
-  // New state for parent reply
   const [replyingTo, setReplyingTo] = useState(null);
+
+  // State for votes
+  const [votes, setVotes] = useState({});
 
   const createReply = () => {
     if (!replyContents) return;
@@ -74,6 +80,49 @@ export default function SingleMessageViewPage({ params }) {
     handleShow();
   };
 
+  // Function to handle voting
+  const handleVote = async (documentId, voteType) => {
+    try {
+      const response = await authFetch("http://localhost:3001/api/votes/vote", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ documentId, voteType }),
+      });
+
+      if (response.ok) {
+        // Refresh votes for this document
+        fetchVotes([documentId]);
+      }
+    } catch (error) {
+      console.error("Error voting:", error);
+    }
+  };
+
+  // Function to fetch votes for multiple documents
+  const fetchVotes = async (documentIds) => {
+    try {
+      const response = await authFetch(
+        "http://localhost:3001/api/votes/bulk-votes",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ documentIds }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (data.success) {
+        setVotes((prevVotes) => ({
+          ...prevVotes,
+          ...data.results,
+        }));
+      }
+    } catch (error) {
+      console.error("Error fetching votes:", error);
+    }
+  };
+
   const { data, error } = useSWR(
     `http://localhost:3001/api/posts/${messageId}`,
     fetcher,
@@ -82,6 +131,21 @@ export default function SingleMessageViewPage({ params }) {
       revalidateOnFocus: true, // Optional: Refresh when window regains focus
     }
   );
+
+  // Fetch votes when messages/replies load or change
+  useEffect(() => {
+    if (data && data.message) {
+      const allDocumentIds = [data.message._id];
+
+      if (data.replies && data.replies.length > 0) {
+        data.replies.forEach((reply) => {
+          allDocumentIds.push(reply._id);
+        });
+      }
+
+      fetchVotes(allDocumentIds);
+    }
+  }, [data]);
 
   if (error) return <div>Failed to load</div>;
   if (!data) return <div>Loading...</div>;
@@ -131,15 +195,32 @@ export default function SingleMessageViewPage({ params }) {
           <h3 className="font-bold">{message.topic}</h3>
           <div className="bg-gray-300 p-[0.3px]"></div>
         </div>
-        <p className="p-1.5 m-0">{message.data}</p>
-        {message.imageUrl && (
-          <img
-            src={message.imageUrl}
-            alt="Message related"
-            className="max-w-full h-auto my-2"
+
+        <div className="flex">
+          {/* Voting buttons for the main message */}
+          <VoteButtons
+            documentId={message._id}
+            votes={
+              votes[message._id] || { upvotes: 0, downvotes: 0, userVote: null }
+            }
+            onVote={handleVote}
           />
-        )}
-        <small className="flex justify-end">Created: {message.timestamp}</small>
+
+          <div className="flex-grow">
+            <p className="p-1.5 m-0">{message.data}</p>
+            {message.imageUrl && (
+              <img
+                src={message.imageUrl}
+                alt="Message related"
+                className="max-w-full h-auto my-2"
+              />
+            )}
+            <small className="flex justify-end">
+              Created: {message.timestamp}
+            </small>
+          </div>
+        </div>
+
         <div className="bg-gray-300 p-[0.3px]"></div>
         <Button
           variant="primary"
@@ -208,6 +289,10 @@ export default function SingleMessageViewPage({ params }) {
             reply={reply}
             onReplyClick={handleReplyToReply}
             level={0}
+            votes={
+              votes[reply._id] || { upvotes: 0, downvotes: 0, userVote: null }
+            }
+            onVote={handleVote}
           />
         ))}
       </div>
@@ -215,8 +300,41 @@ export default function SingleMessageViewPage({ params }) {
   );
 }
 
-// Updated ReplyBox component to handle nested replies
-export function ReplyBox({ reply, onReplyClick, level = 0 }) {
+// Voting buttons component
+function VoteButtons({ documentId, votes, onVote }) {
+  const { upvotes = 0, downvotes = 0, userVote = null } = votes;
+
+  return (
+    <div className="flex flex-col items-center mr-3 mt-2">
+      <button
+        className={`p-1 ${
+          userVote === "upvote" ? "text-orange-500" : "text-gray-500"
+        } hover:text-orange-500`}
+        onClick={() => onVote(documentId, "upvote")}
+        aria-label="Upvote"
+      >
+        <FontAwesomeIcon icon={faArrowUp} />
+      </button>
+
+      <div className="text-xs font-semibold text-green-600">{upvotes}</div>
+
+      <div className="text-xs font-semibold text-red-600">{downvotes}</div>
+
+      <button
+        className={`p-1 ${
+          userVote === "downvote" ? "text-blue-500" : "text-gray-500"
+        } hover:text-blue-500`}
+        onClick={() => onVote(documentId, "downvote")}
+        aria-label="Downvote"
+      >
+        <FontAwesomeIcon icon={faArrowDown} />
+      </button>
+    </div>
+  );
+}
+
+// Updated ReplyBox component to handle nested replies and votes
+export function ReplyBox({ reply, onReplyClick, level = 0, votes, onVote }) {
   const { _id, data, timestamp, imageUrl, user, children } = reply;
   const maxNestingLevel = 5; // Prevent excessive nesting
 
@@ -224,6 +342,10 @@ export function ReplyBox({ reply, onReplyClick, level = 0 }) {
     <div className="mb-2">
       <div className="flex gap-2" style={{ marginLeft: `${level * 20}px` }}>
         <div className="p-0.5 bg-black"></div>
+
+        {/* Add voting buttons */}
+        <VoteButtons documentId={_id} votes={votes} onVote={onVote} />
+
         <div className="flex flex-col flex-grow">
           <div className="flex justify-between items-center">
             <p className="m-0">
@@ -262,6 +384,14 @@ export function ReplyBox({ reply, onReplyClick, level = 0 }) {
               reply={childReply}
               onReplyClick={onReplyClick}
               level={level + 1}
+              votes={
+                votes[childReply._id] || {
+                  upvotes: 0,
+                  downvotes: 0,
+                  userVote: null,
+                }
+              }
+              onVote={onVote}
             />
           ))}
         </div>

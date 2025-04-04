@@ -47,6 +47,22 @@ async function setupDatabase() {
               }
             }.toString(),
           },
+          // View to retrieve all votes by document ID
+          votes_by_doc: {
+            map: function (doc) {
+              if (doc.type === "vote") {
+                emit(doc.documentId, doc);
+              }
+            }.toString(),
+          },
+          // View to retrieve user's votes
+          votes_by_user: {
+            map: function (doc) {
+              if (doc.type === "vote") {
+                emit([doc.username, doc.documentId], doc);
+              }
+            }.toString(),
+          },
         },
       };
 
