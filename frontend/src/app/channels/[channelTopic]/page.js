@@ -2,12 +2,16 @@
 
 "use client";
 import { use } from "react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Modal, Button, Form } from "react-bootstrap";
 import useSWR from "swr";
 import Link from "next/link";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faComment } from "@fortawesome/free-solid-svg-icons";
+import {
+  faComment,
+  faArrowUp,
+  faArrowDown,
+} from "@fortawesome/free-solid-svg-icons";
 import { useSearchParams } from "next/navigation";
 import ProtectedRoute from "../../components/ProtectedRoute";
 import { useAuth } from "../../context/AuthContext";
@@ -33,6 +37,9 @@ export default function ChannelTopicPage({ params }) {
   const [messageTitle, setMessageTitle] = useState("");
   const [messageContents, setMessageContents] = useState("");
   const [imageUrl, setImageUrl] = useState("");
+
+  // State for votes
+  const [votes, setVotes] = useState({});
 
   const createMessage = () => {
     if (!messageTitle || !messageContents) return;
@@ -60,10 +67,66 @@ export default function ChannelTopicPage({ params }) {
       .catch((error) => console.error("Error creating post:", error));
   };
 
+  // Function to handle voting
+  const handleVote = async (documentId, voteType) => {
+    try {
+      const response = await authFetch("http://localhost:3001/api/votes/vote", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ documentId, voteType }),
+      });
+
+      if (response.ok) {
+        // Refresh votes for this document
+        fetchVotes([documentId]);
+      }
+    } catch (error) {
+      console.error("Error voting:", error);
+    }
+  };
+
+  // Function to fetch votes for multiple documents
+  const fetchVotes = async (documentIds) => {
+    try {
+      const response = await authFetch(
+        "http://localhost:3001/api/votes/bulk-votes",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ documentIds }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (data.success) {
+        setVotes((prevVotes) => ({
+          ...prevVotes,
+          ...data.results,
+        }));
+      }
+    } catch (error) {
+      console.error("Error fetching votes:", error);
+    }
+  };
+
   const { data, error } = useSWR("http://localhost:3001/api/posts", fetcher, {
     refreshInterval: 3000, // Refresh every 3 seconds
     revalidateOnFocus: true, // Optional: Refresh when window regains focus
   });
+
+  // Fetch votes when messages load or change
+  useEffect(() => {
+    if (data && data.messages) {
+      const messageIds = data.messages
+        .filter((message) => message.channelId === channelId)
+        .map((message) => message._id);
+
+      if (messageIds.length > 0) {
+        fetchVotes(messageIds);
+      }
+    }
+  }, [data, channelId]);
 
   if (error) return <div>Failed to load</div>;
   if (!data) return <div>Loading...</div>;
@@ -72,32 +135,6 @@ export default function ChannelTopicPage({ params }) {
   const channelMessages = data.messages.filter(
     (message) => message.channelId === channelId
   );
-
-  // Group replies by messageId (Don't think I need this here, will put in another script)
-  // const messageReplies = data.replies.reduce((acc, reply) => {
-  //   if (!acc[reply.messageId]) {
-  //     acc[reply.messageId] = [];
-  //   }
-  //   acc[reply.messageId].push(reply);
-  //   return acc;
-  // }, {});
-
-  // const channelMessages = [
-  //   {
-  //     _id: "mock-id-1",
-  //     topic: "How to center a div?",
-  //     data: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
-  //     imageUrl: "https://i.ytimg.com/vi/NhHb9usKy6Q/maxresdefault.jpg",
-  //     timestamp: "2025-03-27 09:00 AM",
-  //   },
-
-  //   {
-  //     _id: "mock-id-2",
-  //     topic: "How to return multiple values in C",
-  //     data: "How do I do this? I feel like you can use pointers to achieve this, but I am not 100% sure.",
-  //     timestamp: "2025-03-27 09:00 AM",
-  //   },
-  // ];
 
   return (
     <ProtectedRoute>
@@ -166,11 +203,47 @@ export default function ChannelTopicPage({ params }) {
             channelTopic={channelTopic}
             imageUrl={message.imageUrl}
             user={message.user}
-            // channelId={channelId}
+            votes={
+              votes[message._id] || { upvotes: 0, downvotes: 0, userVote: null }
+            }
+            onVote={handleVote}
           />
         ))}
       </div>
     </ProtectedRoute>
+  );
+}
+
+// Voting buttons component
+function VoteButtons({ documentId, votes, onVote }) {
+  const { upvotes = 0, downvotes = 0, userVote = null } = votes;
+
+  return (
+    <div className="flex flex-col items-center mr-3 mt-2">
+      <button
+        className={`p-1 ${
+          userVote === "upvote" ? "text-orange-500" : "text-gray-500"
+        } hover:text-orange-500`}
+        onClick={() => onVote(documentId, "upvote")}
+        aria-label="Upvote"
+      >
+        <FontAwesomeIcon icon={faArrowUp} />
+      </button>
+
+      <div className="text-xs font-semibold text-green-600">{upvotes}</div>
+
+      <div className="text-xs font-semibold text-red-600">{downvotes}</div>
+
+      <button
+        className={`p-1 ${
+          userVote === "downvote" ? "text-blue-500" : "text-gray-500"
+        } hover:text-blue-500`}
+        onClick={() => onVote(documentId, "downvote")}
+        aria-label="Downvote"
+      >
+        <FontAwesomeIcon icon={faArrowDown} />
+      </button>
+    </div>
   );
 }
 
@@ -182,6 +255,8 @@ export function MessageBox({
   channelTopic,
   imageUrl,
   user,
+  votes,
+  onVote,
 }) {
   return (
     <div className="flex flex-col gap-3 min-w-2xl border-gray-500 border-[0.5px] bg-gray-100 text-black shadow-[0_2px_8px_rgba(0,0,0,0.1)] text-decoration-none p-2">
@@ -192,14 +267,21 @@ export function MessageBox({
         <h3 className="font-bold">{topic}</h3>
         <div className="bg-gray-300 p-[0.4px]"></div>
       </div>
-      <p className="p-1.5 m-0">{data}</p>
-      {imageUrl && (
-        <img
-          src={imageUrl}
-          alt="Message related"
-          className="max-w-full h-auto my-2"
-        />
-      )}
+      <div className="flex">
+        {/* Add voting buttons */}
+        <VoteButtons documentId={id} votes={votes} onVote={onVote} />
+
+        <div className="flex-grow">
+          <p className="p-1.5 m-0">{data}</p>
+          {imageUrl && (
+            <img
+              src={imageUrl}
+              alt="Message related"
+              className="max-w-full h-auto my-2"
+            />
+          )}
+        </div>
+      </div>
       <div className="bg-gray-300 p-[0.3px]"></div>
       <div className="flex justify-between">
         <Link
