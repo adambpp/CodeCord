@@ -4,6 +4,7 @@ const channelsRoutes = require("./routes/channels");
 const messageAndReplyRoutes = require("./routes/messages");
 const usersRoutes = require("./routes/users");
 const votingRoutes = require("./routes/votes");
+const searchRoutes = require("./routes/search");
 const { authenticateUser } = require("./middleware/auth");
 
 const app = express();
@@ -31,6 +32,7 @@ app.use("/api/users", usersRoutes);
 app.use("/api/channels", channelsRoutes);
 app.use("/api/posts", messageAndReplyRoutes);
 app.use("/api/votes", votingRoutes);
+app.use("/api/search", searchRoutes);
 
 // Start server
 const PORT = 3001;
